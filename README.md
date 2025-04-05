@@ -15,6 +15,8 @@ ShareIsCare es una pequeña aplicación que funciona como servidor HTTP para com
 - Generación de configuración mediante comando
 - Implementación con plantillas templ 
 - Todo empaquetado en un único binario
+- **Sistema de autenticación** para proteger los archivos
+- Interfaz mejorada con modo oscuro
 
 ## Instalación
 
@@ -86,10 +88,21 @@ make init-config
 
 ```yaml
 # Ejemplo de config.yaml
-port: 8080        # Puerto en el que se ejecutará el servidor
-root_dir: "."     # Directorio raíz para servir archivos
-title: "ShareIsCare"  # Título para la interfaz web
+port: 8080           # Puerto en el que se ejecutará el servidor
+root_dir: "."        # Directorio raíz para servir archivos
+title: "ShareIsCare" # Título para la interfaz web
+username: "admin"    # Usuario para autenticación (cambiar por seguridad)
+password: "shareiscare" # Contraseña para autenticación (cambiar por seguridad)
+secret_key: "random_key" # Clave para firmar sesiones (generada automáticamente)
 ```
+
+## Autenticación
+
+La aplicación ahora incluye un sistema de autenticación para proteger los archivos:
+
+- Para acceder a los archivos es necesario iniciar sesión
+- Credenciales por defecto: admin/shareiscare (cambiar en config.yaml)
+- La sesión se mantiene mediante cookies firmadas con la clave secreta
 
 ## Uso
 
@@ -102,6 +115,7 @@ title: "ShareIsCare"  # Título para la interfaz web
 ```
 
 Luego abre tu navegador en http://localhost:8080 para acceder a la interfaz web.
+Utiliza las credenciales configuradas en `config.yaml` para iniciar sesión.
 
 ## Distribución
 
@@ -138,6 +152,8 @@ El proyecto utiliza:
 - Go como lenguaje base
 - Templ para las plantillas HTML
 - YAML para la configuración
+- Tailwind CSS para los estilos
+- Sistema de autenticación nativo con sesiones
 
 Las plantillas se compilan a código Go, lo que permite empaquetar todo en un único binario sin archivos externos.
 
