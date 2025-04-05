@@ -96,8 +96,20 @@ func RunServer(config *Config) {
 			return
 		}
 
+		// Lista de archivos a excluir
+		excludeFiles := map[string]bool{
+			"config.yaml":     true,
+			"shareiscare":     true,
+			"shareiscare.exe": true,
+		}
+
 		var fileInfos []templates.FileInfo
 		for _, file := range files {
+			// Filtrar archivos de sistema de ShareIsCare
+			if excludeFiles[file.Name()] {
+				continue
+			}
+
 			filePath := filepath.Join(config.RootDir, file.Name())
 
 			// Obtener información del archivo
