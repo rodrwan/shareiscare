@@ -2,6 +2,10 @@
 
 ShareIsCare es una pequeña aplicación que funciona como servidor HTTP para compartir archivos desde una carpeta específica.
 
+## Vista previa
+
+![Interfaz de ShareIsCare](frontend.jpeg)
+
 ## Características
 
 - Interfaz web simple y responsive
