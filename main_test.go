@@ -12,56 +12,56 @@ func TestDefaultConfig(t *testing.T) {
 	config := config.DefaultConfig()
 
 	if config.Port != 8080 {
-		t.Errorf("Puerto incorrecto, esperado: 8080, obtenido: %d", config.Port)
+		t.Errorf("Incorrect port, expected: 8080, got: %d", config.Port)
 	}
 
 	if config.RootDir != "." {
-		t.Errorf("Directorio raíz incorrecto, esperado: '.', obtenido: %s", config.RootDir)
+		t.Errorf("Incorrect root directory, expected: '.', got: %s", config.RootDir)
 	}
 
 	if config.Title != "ShareIsCare" {
-		t.Errorf("Título incorrecto, esperado: 'ShareIsCare', obtenido: %s", config.Title)
+		t.Errorf("Incorrect title, expected: 'ShareIsCare', got: %s", config.Title)
 	}
 }
 
 func TestSaveAndLoadConfig(t *testing.T) {
-	// Crear directorio temporal para pruebas
+	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "shareiscare-test")
 	if err != nil {
-		t.Fatalf("Error al crear directorio temporal: %v", err)
+		t.Fatalf("Error creating temporary directory: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
 
 	testConfigPath := filepath.Join(tempDir, "test-config.yaml")
 
-	// Crear configuración personalizada para guardar
+	// Create custom configuration to save
 	testConfig := &config.Config{
 		Port:    9090,
 		RootDir: "/test/dir",
 		Title:   "Test Title",
 	}
 
-	// Probar SaveConfig
+	// Test SaveConfig
 	err = config.SaveConfig(testConfig, testConfigPath)
 	if err != nil {
-		t.Fatalf("Error al guardar configuración: %v", err)
+		t.Fatalf("Error saving configuration: %v", err)
 	}
 
-	// Verificar que el archivo existe
+	// Verify that the file exists
 	if _, err := os.Stat(testConfigPath); os.IsNotExist(err) {
-		t.Fatalf("El archivo de configuración no fue creado")
+		t.Fatalf("Configuration file was not created")
 	}
 
-	// Probar LoadConfig
-	// Como LoadConfig solo lee de "config.yaml", creamos un respaldo temporal
+	// Test LoadConfig
+	// Since LoadConfig only reads from "config.yaml", we create a temporary backup
 	originalConfigPath := "config.yaml"
 	backupPath := ""
 
-	// Si existe un config.yaml, hacer backup
+	// If config.yaml exists, make a backup
 	if _, err := os.Stat(originalConfigPath); err == nil {
 		backupPath = originalConfigPath + ".bak"
 		if err := os.Rename(originalConfigPath, backupPath); err != nil {
-			t.Fatalf("Error al hacer backup de config.yaml: %v", err)
+			t.Fatalf("Error backing up config.yaml: %v", err)
 		}
 		defer func() {
 			os.Remove(originalConfigPath)
@@ -69,32 +69,32 @@ func TestSaveAndLoadConfig(t *testing.T) {
 		}()
 	}
 
-	// Copiar nuestra configuración de prueba a config.yaml
+	// Copy our test configuration to config.yaml
 	testConfigData, err := os.ReadFile(testConfigPath)
 	if err != nil {
-		t.Fatalf("Error al leer archivo de prueba: %v", err)
+		t.Fatalf("Error reading test file: %v", err)
 	}
 
 	if err := os.WriteFile(originalConfigPath, testConfigData, 0644); err != nil {
-		t.Fatalf("Error al escribir en config.yaml: %v", err)
+		t.Fatalf("Error writing to config.yaml: %v", err)
 	}
 
-	// Ahora podemos probar LoadConfig
+	// Now we can test LoadConfig
 	loadedConfig, err := config.LoadConfig()
 	if err != nil {
-		t.Fatalf("Error al cargar configuración: %v", err)
+		t.Fatalf("Error loading configuration: %v", err)
 	}
 
-	// Verificar que la configuración cargada coincide con la guardada
+	// Verify that the loaded configuration matches the saved one
 	if loadedConfig.Port != testConfig.Port {
-		t.Errorf("Puerto incorrecto, esperado: %d, obtenido: %d", testConfig.Port, loadedConfig.Port)
+		t.Errorf("Incorrect port, expected: %d, got: %d", testConfig.Port, loadedConfig.Port)
 	}
 
 	if loadedConfig.RootDir != testConfig.RootDir {
-		t.Errorf("Directorio raíz incorrecto, esperado: %s, obtenido: %s", testConfig.RootDir, loadedConfig.RootDir)
+		t.Errorf("Incorrect root directory, expected: %s, got: %s", testConfig.RootDir, loadedConfig.RootDir)
 	}
 
 	if loadedConfig.Title != testConfig.Title {
-		t.Errorf("Título incorrecto, esperado: %s, obtenido: %s", testConfig.Title, loadedConfig.Title)
+		t.Errorf("Incorrect title, expected: %s, got: %s", testConfig.Title, loadedConfig.Title)
 	}
 }

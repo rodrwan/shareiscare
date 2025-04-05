@@ -9,47 +9,47 @@ import (
 )
 
 func TestSecurityPathValidation(t *testing.T) {
-	// Crear directorios temporales para pruebas
+	// Create temporary directories for tests
 	rootDir, err := os.MkdirTemp("", "shareiscare-test-root")
 	if err != nil {
-		t.Fatalf("Error al crear directorio raíz temporal: %v", err)
+		t.Fatalf("Error creating temporary root directory: %v", err)
 	}
 	defer os.RemoveAll(rootDir)
 
-	// Crear un archivo de prueba dentro del directorio raíz
-	validFilePath := filepath.Join(rootDir, "archivo_valido.txt")
-	if err := os.WriteFile(validFilePath, []byte("contenido válido"), 0644); err != nil {
-		t.Fatalf("Error al crear archivo de prueba: %v", err)
+	// Create a test file inside the root directory
+	validFilePath := filepath.Join(rootDir, "valid_file.txt")
+	if err := os.WriteFile(validFilePath, []byte("valid content"), 0644); err != nil {
+		t.Fatalf("Error creating test file: %v", err)
 	}
 
-	// Crear subdirectorio
-	subDir := filepath.Join(rootDir, "subdirectorio")
+	// Create subdirectory
+	subDir := filepath.Join(rootDir, "subdirectory")
 	if err := os.Mkdir(subDir, 0755); err != nil {
-		t.Fatalf("Error al crear subdirectorio: %v", err)
+		t.Fatalf("Error creating subdirectory: %v", err)
 	}
 
-	// Archivo en subdirectorio (válido)
-	validSubdirFilePath := filepath.Join(subDir, "archivo_subdir.txt")
-	if err := os.WriteFile(validSubdirFilePath, []byte("contenido en subdirectorio"), 0644); err != nil {
-		t.Fatalf("Error al crear archivo en subdirectorio: %v", err)
+	// File in subdirectory (valid)
+	validSubdirFilePath := filepath.Join(subDir, "subdir_file.txt")
+	if err := os.WriteFile(validSubdirFilePath, []byte("content in subdirectory"), 0644); err != nil {
+		t.Fatalf("Error creating file in subdirectory: %v", err)
 	}
 
-	// Configuración para la prueba
+	// Configuration for the test
 	config := &config.Config{
 		Port:    8080,
 		RootDir: rootDir,
 		Title:   "Test Server",
 	}
 
-	// Probar acceso a un archivo válido dentro del directorio raíz
+	// Test access to a valid file inside the root directory
 	t.Run("Valid File Access", func(t *testing.T) {
-		// En una implementación real, estos se usarían para probar el handler HTTP
-		// pero aquí estamos probando sólo la función de validación
-		// _ = httptest.NewRequest(http.MethodGet, "/download?filename=archivo_valido.txt", nil)
+		// In a real implementation, these would be used to test the HTTP handler
+		// but here we're just testing the validation function
+		// _ = httptest.NewRequest(http.MethodGet, "/download?filename=valid_file.txt", nil)
 		// _ = httptest.NewRecorder()
 
 		validatePath := func(filename string) (string, bool) {
-			// Validar que el archivo esté dentro del directorio configurado
+			// Validate that the file is within the configured directory
 			fullPath := filepath.Join(config.RootDir, filename)
 			absRoot, err := filepath.Abs(config.RootDir)
 			if err != nil {
@@ -68,27 +68,27 @@ func TestSecurityPathValidation(t *testing.T) {
 			return fullPath, true
 		}
 
-		filename := "archivo_valido.txt"
+		filename := "valid_file.txt"
 		path, valid := validatePath(filename)
 
 		if !valid {
-			t.Errorf("La validación de ruta rechazó un archivo válido")
+			t.Errorf("Path validation rejected a valid file")
 		}
 
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("No se pudo acceder al archivo válido: %v", err)
+			t.Errorf("Could not access valid file: %v", err)
 		}
 	})
 
-	// Probar acceso a un archivo en un subdirectorio (debería ser válido)
+	// Test access to a file in a subdirectory (should be valid)
 	t.Run("Valid Subdirectory File Access", func(t *testing.T) {
-		// En una implementación real, estos se usarían para probar el handler HTTP
-		// pero aquí estamos probando sólo la función de validación
-		// _ = httptest.NewRequest(http.MethodGet, "/download?filename=subdirectorio/archivo_subdir.txt", nil)
+		// In a real implementation, these would be used to test the HTTP handler
+		// but here we're just testing the validation function
+		// _ = httptest.NewRequest(http.MethodGet, "/download?filename=subdirectory/subdir_file.txt", nil)
 		// _ = httptest.NewRecorder()
 
 		validatePath := func(filename string) (string, bool) {
-			// Validar que el archivo esté dentro del directorio configurado
+			// Validate that the file is within the configured directory
 			fullPath := filepath.Join(config.RootDir, filename)
 			absRoot, err := filepath.Abs(config.RootDir)
 			if err != nil {
@@ -107,27 +107,27 @@ func TestSecurityPathValidation(t *testing.T) {
 			return fullPath, true
 		}
 
-		filename := "subdirectorio/archivo_subdir.txt"
+		filename := "subdirectory/subdir_file.txt"
 		path, valid := validatePath(filename)
 
 		if !valid {
-			t.Errorf("La validación de ruta rechazó un archivo válido en subdirectorio")
+			t.Errorf("Path validation rejected a valid file in subdirectory")
 		}
 
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			t.Errorf("No se pudo acceder al archivo válido en subdirectorio: %v", err)
+			t.Errorf("Could not access valid file in subdirectory: %v", err)
 		}
 	})
 
-	// Probar intento de acceso a un archivo fuera del directorio raíz (atravesar directorios)
+	// Test attempt to access a file outside the root directory (directory traversal)
 	t.Run("Path Traversal Attack", func(t *testing.T) {
-		// En una implementación real, estos se usarían para probar el handler HTTP
-		// pero aquí estamos probando sólo la función de validación
+		// In a real implementation, these would be used to test the HTTP handler
+		// but here we're just testing the validation function
 		// _ = httptest.NewRequest(http.MethodGet, "/download?filename=../../../etc/passwd", nil)
 		// _ = httptest.NewRecorder()
 
 		validatePath := func(filename string) (string, bool) {
-			// Validar que el archivo esté dentro del directorio configurado
+			// Validate that the file is within the configured directory
 			fullPath := filepath.Join(config.RootDir, filename)
 			absRoot, err := filepath.Abs(config.RootDir)
 			if err != nil {
@@ -150,7 +150,7 @@ func TestSecurityPathValidation(t *testing.T) {
 		_, valid := validatePath(filename)
 
 		if valid {
-			t.Errorf("La validación de ruta permitió un ataque de traversal de directorios")
+			t.Errorf("Path validation allowed a directory traversal attack")
 		}
 	})
 }

@@ -1,29 +1,29 @@
 #!/bin/bash
 
-# Script para ejecutar tests unitarios de ShareIsCare
+# Script to run ShareIsCare unit tests
 
-set -e  # Salir si hay errores
+set -e  # Exit if there are errors
 
-echo "=== Ejecutando tests unitarios de ShareIsCare ==="
+echo "=== Running ShareIsCare unit tests ==="
 
-# Limpieza de archivos temporales que puedan existir de ejecuciones anteriores
-echo "Limpiando archivos temporales..."
+# Cleanup of temporary files that may exist from previous runs
+echo "Cleaning temporary files..."
 if [ -f config.yaml.bak ]; then
     mv config.yaml.bak config.yaml
 fi
 
-# Ejecutar los tests
-echo "Ejecutando tests..."
+# Run the tests
+echo "Running tests..."
 go test -v ./...
 
-# Verificar que el código compile para ARM (Raspberry Pi)
-echo "Verificando compilación para Raspberry Pi..."
+# Verify that the code compiles for ARM (Raspberry Pi)
+echo "Verifying compilation for Raspberry Pi..."
 if GOOS=linux GOARCH=arm GOARM=7 go build -o /tmp/shareiscare-arm-test main.go; then
-    echo "✓ La compilación para Raspberry Pi es correcta"
+    echo "✓ Compilation for Raspberry Pi is correct"
     rm /tmp/shareiscare-arm-test
 else
-    echo "✗ Error en la compilación para Raspberry Pi"
+    echo "✗ Error in compilation for Raspberry Pi"
     exit 1
 fi
 
-echo "=== Tests completados ==="
+echo "=== Tests completed ==="

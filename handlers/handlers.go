@@ -15,20 +15,20 @@ import (
 	"github.com/rodrwan/shareiscare/templates"
 )
 
-// Session guarda la información de sesión del usuario
+// Session stores the user's session information
 type Session struct {
 	Username  string
 	Timestamp time.Time
 }
 
-// isAuthenticated verifica si un usuario está autenticado mediante una cookie de sesión
+// isAuthenticated checks if a user is authenticated via a session cookie
 func isAuthenticated(r *http.Request, config *config.Config) bool {
 	sessionCookie, err := r.Cookie("session")
 	if err != nil {
 		return false
 	}
 
-	// Validar formato de la sesión (usuario:timestamp:firma)
+	// Validate session format (user:timestamp:signature)
 	parts := strings.Split(sessionCookie.Value, ":")
 	if len(parts) != 3 {
 		return false
@@ -38,7 +38,7 @@ func isAuthenticated(r *http.Request, config *config.Config) bool {
 	timestamp := parts[1]
 	signature := parts[2]
 
-	// Verificar la firma de la sesión
+	// Verify the session signature
 	expectedSignature := generateSignature(username, timestamp, config.SecretKey)
 	if signature != expectedSignature {
 		return false
@@ -47,15 +47,15 @@ func isAuthenticated(r *http.Request, config *config.Config) bool {
 	return true
 }
 
-// generateSignature genera una firma simple para la sesión
+// generateSignature generates a simple signature for the session
 func generateSignature(username, timestamp, secretKey string) string {
-	// Esta es una implementación básica. En una aplicación real,
-	// se recomienda usar HMAC u otro algoritmo criptográfico seguro.
+	// This is a basic implementation. In a real application,
+	// it's recommended to use HMAC or another secure cryptographic algorithm.
 	data := username + ":" + timestamp + ":" + secretKey
 	return fmt.Sprintf("%x", len(data)*31)
 }
 
-// createSessionCookie crea una cookie de sesión
+// createSessionCookie creates a session cookie
 func createSessionCookie(username string, config *config.Config) *http.Cookie {
 	timestamp := fmt.Sprintf("%d", time.Now().Unix())
 	signature := generateSignature(username, timestamp, config.SecretKey)
@@ -66,16 +66,16 @@ func createSessionCookie(username string, config *config.Config) *http.Cookie {
 		Value:    sessionValue,
 		Path:     "/",
 		HttpOnly: true,
-		MaxAge:   3600 * 24, // 24 horas
+		MaxAge:   3600 * 24, // 24 hours
 		SameSite: http.SameSiteLaxMode,
 	}
 }
 
-// requireAuth es un middleware que verifica si el usuario está autenticado
+// requireAuth is a middleware that checks if the user is authenticated
 func RequireAuth(next http.HandlerFunc, config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !isAuthenticated(r, config) {
-			// Redireccionar a la página de login
+			// Redirect to the login page
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
@@ -91,7 +91,7 @@ func Index(config *config.Config) http.HandlerFunc {
 			return
 		}
 
-		// Lista de archivos a excluir
+		// List of files to exclude
 		excludeFiles := map[string]bool{
 			"config.yaml":     true,
 			"shareiscare":     true,
@@ -100,20 +100,20 @@ func Index(config *config.Config) http.HandlerFunc {
 
 		var fileInfos []templates.FileInfo
 		for _, file := range files {
-			// Filtrar archivos de sistema de ShareIsCare
+			// Filter ShareIsCare system files
 			if excludeFiles[file.Name()] {
 				continue
 			}
 
 			filePath := filepath.Join(config.RootDir, file.Name())
 
-			// Obtener información del archivo
+			// Get file information
 			info, err := os.Stat(filePath)
 			if err != nil {
 				continue
 			}
 
-			// Formatear tamaño
+			// Format size
 			size := ""
 			if !info.IsDir() {
 				bytes := info.Size()
@@ -125,7 +125,7 @@ func Index(config *config.Config) http.HandlerFunc {
 					size = fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
 				}
 			} else {
-				size = "directorio"
+				size = "directory"
 			}
 
 			fileInfos = append(fileInfos, templates.FileInfo{
@@ -136,10 +136,10 @@ func Index(config *config.Config) http.HandlerFunc {
 			})
 		}
 
-		// Verificar si el usuario está autenticado
+		// Check if the user is authenticated
 		isLoggedIn := isAuthenticated(r, config)
 
-		// Obtener el nombre de usuario si está autenticado
+		// Get the username if authenticated
 		username := ""
 		if isLoggedIn {
 			sessionCookie, _ := r.Cookie("session")
@@ -161,7 +161,7 @@ func Index(config *config.Config) http.HandlerFunc {
 			Username:   username,
 		}
 
-		// Renderizar la plantilla con el layout
+		// Render the template with the layout
 		component := templates.Index(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)
@@ -170,7 +170,7 @@ func Index(config *config.Config) http.HandlerFunc {
 	}
 }
 
-// Ruta para descargar archivos
+// Route for downloading files
 func Download(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.URL.Query().Get("filename")
@@ -179,37 +179,37 @@ func Download(config *config.Config) http.HandlerFunc {
 			return
 		}
 
-		// Validar que el archivo esté dentro del directorio configurado
+		// Validate that the file is within the configured directory
 		fullPath := filepath.Join(config.RootDir, filename)
 		absRoot, err := filepath.Abs(config.RootDir)
 		if err != nil {
-			http.Error(w, "Error de configuración", http.StatusInternalServerError)
+			http.Error(w, "Configuration error", http.StatusInternalServerError)
 			return
 		}
 		absPath, err := filepath.Abs(fullPath)
 		if err != nil {
-			http.Error(w, "Ruta inválida", http.StatusBadRequest)
+			http.Error(w, "Invalid path", http.StatusBadRequest)
 			return
 		}
 
 		rel, err := filepath.Rel(absRoot, absPath)
 		if err != nil || strings.HasPrefix(rel, "..") || strings.Contains(rel, "/../") {
-			http.Error(w, "Acceso denegado", http.StatusForbidden)
+			http.Error(w, "Access denied", http.StatusForbidden)
 			return
 		}
 
-		// Verificar si el archivo existe y no es un directorio
+		// Check if the file exists and is not a directory
 		fileInfo, err := os.Stat(fullPath)
 		if err != nil {
-			http.Error(w, "Archivo no encontrado", http.StatusNotFound)
+			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
 		if fileInfo.IsDir() {
-			http.Error(w, "No se puede descargar un directorio", http.StatusBadRequest)
+			http.Error(w, "Cannot download a directory", http.StatusBadRequest)
 			return
 		}
 
-		// Abrir el archivo
+		// Open the file
 		file, err := os.Open(fullPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -217,23 +217,23 @@ func Download(config *config.Config) http.HandlerFunc {
 		}
 		defer file.Close()
 
-		// Configurar las cabeceras para forzar la descarga
+		// Configure headers to force download
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filepath.Base(filename)))
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
-		// Enviar el archivo
+		// Send the file
 		_, err = io.Copy(w, file)
 		if err != nil {
-			log.Printf("Error al enviar archivo: %v", err)
+			log.Printf("Error sending file: %v", err)
 		}
 	}
 }
 
-// Ruta de login (GET)
+// Login route (GET)
 func Login(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Si ya está autenticado, redirigir a la página de subida
+		// If already authenticated, redirect to the upload page
 		if isAuthenticated(r, config) {
 			http.Redirect(w, r, "/upload", http.StatusSeeOther)
 			return
@@ -246,12 +246,12 @@ func Login(config *config.Config) http.HandlerFunc {
 		}
 
 		layoutData := templates.LayoutData{
-			Title:      config.Title + " - Iniciar sesión",
+			Title:      config.Title + " - Log in",
 			IsLoggedIn: false,
 			Username:   "",
 		}
 
-		// Renderizar la plantilla con el layout
+		// Render the template with the layout
 		component := templates.Login(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)
@@ -260,43 +260,43 @@ func Login(config *config.Config) http.HandlerFunc {
 	}
 }
 
-// Ruta de login (POST)
+// Login route (POST)
 func LoginPost(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, "Error al procesar el formulario", http.StatusBadRequest)
+			http.Error(w, "Error processing the form", http.StatusBadRequest)
 			return
 		}
 
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		// Verificar credenciales
+		// Verify credentials
 		if username == config.Username && password == config.Password {
-			// Crear cookie de sesión
+			// Create session cookie
 			sessionCookie := createSessionCookie(username, config)
 			http.SetCookie(w, sessionCookie)
 
-			// Redirigir a la página de subida
+			// Redirect to the upload page
 			http.Redirect(w, r, "/upload", http.StatusSeeOther)
 			return
 		}
 
-		// Credenciales incorrectas
+		// Incorrect credentials
 		data := templates.LoginData{
 			Title:        config.Title,
 			Username:     username,
-			ErrorMessage: "Usuario o contraseña incorrectos",
+			ErrorMessage: "Incorrect username or password",
 		}
 
 		layoutData := templates.LayoutData{
-			Title:      config.Title + " - Iniciar sesión",
+			Title:      config.Title + " - Log in",
 			IsLoggedIn: false,
 			Username:   "",
 		}
 
-		// Renderizar la plantilla con el layout
+		// Render the template with the layout
 		component := templates.Login(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)
@@ -305,10 +305,10 @@ func LoginPost(config *config.Config) http.HandlerFunc {
 	}
 }
 
-// Ruta de logout
+// Logout route
 func Logout(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Borrar la cookie de sesión
+		// Delete the session cookie
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session",
 			Value:    "",
@@ -317,15 +317,15 @@ func Logout(config *config.Config) http.HandlerFunc {
 			MaxAge:   -1,
 		})
 
-		// Redirigir a la página principal
+		// Redirect to the main page
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
-// Ruta para mostrar el formulario de subida de archivos (GET) - protegida
+// Route to display the file upload form (GET) - protected
 func Upload(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Obtener el nombre de usuario
+		// Get the username
 		username := ""
 		sessionCookie, _ := r.Cookie("session")
 		parts := strings.Split(sessionCookie.Value, ":")
@@ -341,12 +341,12 @@ func Upload(config *config.Config) http.HandlerFunc {
 		}
 
 		layoutData := templates.LayoutData{
-			Title:      config.Title + " - Subir archivos",
+			Title:      config.Title + " - Upload files",
 			IsLoggedIn: true,
 			Username:   username,
 		}
 
-		// Renderizar la plantilla con el layout
+		// Render the template with the layout
 		component := templates.Upload(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)
@@ -355,45 +355,45 @@ func Upload(config *config.Config) http.HandlerFunc {
 	}
 }
 
-// Ruta para procesar la subida de archivos (POST) - protegida
+// Route to process file uploads (POST) - protected
 func UploadPost(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Limitar el tamaño máximo del formulario a 32MB
+		// Limit the maximum form size to 32MB
 		r.ParseMultipartForm(32 << 20)
 
-		// Obtener los archivos subidos
+		// Get the uploaded files
 		files := r.MultipartForm.File["files"]
 		if len(files) == 0 {
 			data := templates.UploadData{
 				Title:     config.Title,
 				Directory: config.RootDir,
 				Success:   false,
-				Message:   "No se han seleccionado archivos",
+				Message:   "No files have been selected",
 			}
 			templ.Handler(templates.Upload(data)).ServeHTTP(w, r)
 			return
 		}
 
-		// Validación: asegurarse de que el directorio de destino exista y tenga permisos
+		// Validation: ensure that the destination directory exists and has permissions
 		absRoot, err := filepath.Abs(config.RootDir)
 		if err != nil {
 			data := templates.UploadData{
 				Title:     config.Title,
 				Directory: config.RootDir,
 				Success:   false,
-				Message:   "Error de configuración: " + err.Error(),
+				Message:   "Configuration error: " + err.Error(),
 			}
 			templ.Handler(templates.Upload(data)).ServeHTTP(w, r)
 			return
 		}
 
-		// Verificar permisos de escritura
+		// Check write permissions
 		if _, err := os.Stat(absRoot); err != nil {
 			data := templates.UploadData{
 				Title:     config.Title,
 				Directory: config.RootDir,
 				Success:   false,
-				Message:   "Error al acceder al directorio de destino: " + err.Error(),
+				Message:   "Error accessing destination directory: " + err.Error(),
 			}
 			templ.Handler(templates.Upload(data)).ServeHTTP(w, r)
 			return
@@ -402,28 +402,28 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 		uploadedFiles := []string{}
 		var errorMessage string
 
-		// Procesar cada archivo
+		// Process each file
 		for _, fileHeader := range files {
-			// Obtener el archivo
+			// Get the file
 			file, err := fileHeader.Open()
 			if err != nil {
-				log.Printf("Error al abrir archivo: %v", err)
+				log.Printf("Error opening file: %v", err)
 				continue
 			}
 			defer file.Close()
 
-			// Crear el destino
+			// Create the destination
 			dst, err := os.Create(filepath.Join(absRoot, fileHeader.Filename))
 			if err != nil {
-				errorMessage = "Error al crear archivo de destino: " + err.Error()
+				errorMessage = "Error creating destination file: " + err.Error()
 				log.Printf("%s", errorMessage)
 				continue
 			}
 			defer dst.Close()
 
-			// Copiar contenido
+			// Copy content
 			if _, err = io.Copy(dst, file); err != nil {
-				errorMessage = "Error al guardar archivo: " + err.Error()
+				errorMessage = "Error saving file: " + err.Error()
 				log.Printf("%s", errorMessage)
 				continue
 			}
@@ -431,7 +431,7 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 			uploadedFiles = append(uploadedFiles, fileHeader.Filename)
 		}
 
-		// Preparar respuesta
+		// Prepare response
 		data := templates.UploadData{
 			Title:     config.Title,
 			Directory: config.RootDir,
@@ -441,17 +441,17 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 
 		if len(uploadedFiles) > 0 {
 			if len(uploadedFiles) == 1 {
-				data.Message = "Archivo subido con éxito: " + uploadedFiles[0]
+				data.Message = "File uploaded successfully: " + uploadedFiles[0]
 			} else {
-				data.Message = fmt.Sprintf("%d archivos subidos con éxito", len(uploadedFiles))
+				data.Message = fmt.Sprintf("%d files uploaded successfully", len(uploadedFiles))
 			}
 		} else if errorMessage != "" {
 			data.Message = errorMessage
 		} else {
-			data.Message = "No se pudo procesar ningún archivo"
+			data.Message = "No files could be processed"
 		}
 
-		// Obtener el nombre de usuario
+		// Get the username
 		username := ""
 		sessionCookie, _ := r.Cookie("session")
 		parts := strings.Split(sessionCookie.Value, ":")
@@ -460,12 +460,12 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 		}
 
 		layoutData := templates.LayoutData{
-			Title:      config.Title + " - Subir archivos",
+			Title:      config.Title + " - Upload files",
 			IsLoggedIn: true,
 			Username:   username,
 		}
 
-		// Renderizar la plantilla con el layout
+		// Render the template with the layout
 		component := templates.Upload(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)

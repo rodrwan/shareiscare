@@ -1,13 +1,13 @@
 package templates
 
-// Upload es la página para subir archivos
+// Upload is the page for uploading files
 templ Upload(data UploadData) {
 	<div>
 		<div class="sm:flex sm:items-center">
 			<div class="sm:flex-auto">
-				<h1 class="text-2xl font-semibold leading-6 text-gray-900 dark:text-white">Subir archivos</h1>
+				<h1 class="text-2xl font-semibold leading-6 text-gray-900 dark:text-white">Upload files</h1>
 				<p class="mt-2 text-sm text-gray-700 dark:text-gray-300">
-					Desde aquí puedes subir archivos al directorio: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
+					From here you can upload files to the directory: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
 				</p>
 			</div>
 		</div>
@@ -19,7 +19,7 @@ templ Upload(data UploadData) {
 						<i class="fas fa-check-circle text-green-400 dark:text-green-500 h-5 w-5"></i>
 					</div>
 					<div class="ml-3">
-						<h3 class="text-sm font-medium text-green-800 dark:text-green-300">Éxito</h3>
+						<h3 class="text-sm font-medium text-green-800 dark:text-green-300">Success</h3>
 						<div class="mt-2 text-sm text-green-700 dark:text-green-400">
 							<p>{ data.Message }</p>
 						</div>
@@ -55,7 +55,7 @@ templ Upload(data UploadData) {
 				}
 			},
 			removeFile(index) {
-				// No podemos modificar FileList directamente, esto es solo visual
+				// We cannot modify FileList directly, this is only visual
 				this.files = Array.from(this.files).filter((_, i) => i !== index);
 			},
 			submitForm() {
@@ -83,7 +83,7 @@ templ Upload(data UploadData) {
 
 						<div class="mt-4 flex text-sm leading-6 text-gray-600 dark:text-gray-400">
 							<label for="files" class="relative cursor-pointer rounded-md bg-white dark:bg-slate-800 font-semibold text-primary-600 dark:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-600 focus-within:ring-offset-2 hover:text-primary-500 dark:hover:text-primary-400 transition-colors">
-								<span>Seleccionar archivos</span>
+								<span>Select files</span>
 								<input
 									id="files"
 									name="files"
@@ -93,15 +93,15 @@ templ Upload(data UploadData) {
 									class="sr-only"
 								/>
 							</label>
-							<p class="pl-1">o arrastra y suelta</p>
+							<p class="pl-1">or drag and drop</p>
 						</div>
-						<p class="text-xs leading-5 text-gray-600 dark:text-gray-400">Archivos de hasta 32MB</p>
+						<p class="text-xs leading-5 text-gray-600 dark:text-gray-400">Files up to 32MB</p>
 					</div>
 				</div>
 
-				<!-- Vista previa de archivos seleccionados -->
+				<!-- Preview of selected files -->
 				<div x-show="files.length > 0" class="mt-4">
-					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivos seleccionados:</h3>
+					<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selected files:</h3>
 					<ul class="divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
 						<template x-for="(file, index) in Array.from(files)" :key="index">
 							<li class="px-4 py-3 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
@@ -129,7 +129,7 @@ templ Upload(data UploadData) {
 						href="/"
 						class="rounded-md bg-white dark:bg-transparent px-3.5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 mr-3 transition-colors"
 					>
-						Cancelar
+						Cancel
 					</a>
 					<button
 						type="submit"
@@ -138,10 +138,10 @@ templ Upload(data UploadData) {
 						class="rounded-md bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors"
 					>
 						<span x-show="!uploading">
-							<i class="fas fa-upload mr-1"></i> Subir
+							<i class="fas fa-upload mr-1"></i> Upload
 						</span>
 						<span x-show="uploading">
-							<i class="fas fa-spinner fa-spin mr-1"></i> Subiendo...
+							<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...
 						</span>
 					</button>
 				</div>

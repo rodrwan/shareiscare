@@ -13,40 +13,40 @@ import (
 )
 
 func TestIndexHandler(t *testing.T) {
-	// Crear directorio temporal para pruebas
+	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "shareiscare-test-index")
 	if err != nil {
-		t.Fatalf("Error al crear directorio temporal: %v", err)
+		t.Fatalf("Error creating temporary directory: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Crear algunos archivos de prueba
-	testFiles := []string{"archivo1.txt", "archivo2.txt"}
+	// Create some test files
+	testFiles := []string{"file1.txt", "file2.txt"}
 	for _, filename := range testFiles {
 		path := filepath.Join(tempDir, filename)
-		if err := os.WriteFile(path, []byte("contenido de prueba"), 0644); err != nil {
-			t.Fatalf("Error al crear archivo de prueba: %v", err)
+		if err := os.WriteFile(path, []byte("test content"), 0644); err != nil {
+			t.Fatalf("Error creating test file: %v", err)
 		}
 	}
 
-	// Crear un directorio de prueba
-	testDirPath := filepath.Join(tempDir, "directorio_prueba")
+	// Create a test directory
+	testDirPath := filepath.Join(tempDir, "test_directory")
 	if err := os.Mkdir(testDirPath, 0755); err != nil {
-		t.Fatalf("Error al crear directorio de prueba: %v", err)
+		t.Fatalf("Error creating test directory: %v", err)
 	}
 
-	// Configuración para la prueba
+	// Configuration for the test
 	config := &config.Config{
 		Port:    8080,
 		RootDir: tempDir,
 		Title:   "Test Server",
 	}
 
-	// Crear servidor HTTP de prueba
+	// Create test HTTP server
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
-	// Implementar un handler similar al de RunServer pero simplificado para pruebas
+	// Implement a handler similar to RunServer but simplified for tests
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		files, err := os.ReadDir(config.RootDir)
 		if err != nil {
@@ -54,7 +54,7 @@ func TestIndexHandler(t *testing.T) {
 			return
 		}
 
-		// Simplemente verificamos que la respuesta contenga los nombres de los archivos
+		// Simply verify that the response contains the file names
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 
@@ -63,66 +63,66 @@ func TestIndexHandler(t *testing.T) {
 		}
 	})
 
-	// Ejecutar la solicitud
+	// Execute the request
 	handler.ServeHTTP(w, req)
 
-	// Verificar la respuesta
+	// Verify the response
 	resp := w.Result()
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Código de estado incorrecto, esperado: %d, obtenido: %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("Incorrect status code, expected: %d, got: %d", http.StatusOK, resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("Error al leer el cuerpo de la respuesta: %v", err)
+		t.Fatalf("Error reading response body: %v", err)
 	}
 
 	bodyStr := string(body)
 
-	// Verificar que la respuesta contenga los nombres de los archivos
+	// Verify that the response contains the file names
 	for _, filename := range testFiles {
 		if !strings.Contains(bodyStr, filename) {
-			t.Errorf("Respuesta no contiene el archivo '%s'", filename)
+			t.Errorf("Response does not contain the file '%s'", filename)
 		}
 	}
 
-	// Verificar que la respuesta contenga el nombre del directorio
-	if !strings.Contains(bodyStr, "directorio_prueba") {
-		t.Errorf("Respuesta no contiene el directorio 'directorio_prueba'")
+	// Verify that the response contains the directory name
+	if !strings.Contains(bodyStr, "test_directory") {
+		t.Errorf("Response does not contain the directory 'test_directory'")
 	}
 }
 
 func TestDownloadHandler(t *testing.T) {
-	// Crear directorio temporal para pruebas
+	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "shareiscare-test-download")
 	if err != nil {
-		t.Fatalf("Error al crear directorio temporal: %v", err)
+		t.Fatalf("Error creating temporary directory: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Crear un archivo de prueba
-	testFilename := "archivo_para_descargar.txt"
-	testContent := "Contenido de prueba para descargar"
+	// Create a test file
+	testFilename := "file_to_download.txt"
+	testContent := "Test content for download"
 	testFilePath := filepath.Join(tempDir, testFilename)
 
 	if err := os.WriteFile(testFilePath, []byte(testContent), 0644); err != nil {
-		t.Fatalf("Error al crear archivo de prueba: %v", err)
+		t.Fatalf("Error creating test file: %v", err)
 	}
 
-	// Configuración para la prueba
+	// Configuration for the test
 	config := &config.Config{
 		Port:    8080,
 		RootDir: tempDir,
 		Title:   "Test Server",
 	}
 
-	// Crear solicitud HTTP de prueba
+	// Create test HTTP request
 	req := httptest.NewRequest(http.MethodGet, "/download?filename="+testFilename, nil)
 	w := httptest.NewRecorder()
 
-	// Implementar un handler similar al de RunServer pero simplificado para pruebas
+	// Implement a handler similar to RunServer but simplified for tests
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		filename := r.URL.Query().Get("filename")
 		if filename == "" {
@@ -130,21 +130,21 @@ func TestDownloadHandler(t *testing.T) {
 			return
 		}
 
-		// Validar ruta
+		// Validate path
 		fullPath := filepath.Join(config.RootDir, filename)
 
-		// Verificar si el archivo existe
+		// Check if the file exists
 		fileInfo, err := os.Stat(fullPath)
 		if err != nil {
-			http.Error(w, "Archivo no encontrado", http.StatusNotFound)
+			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
 		if fileInfo.IsDir() {
-			http.Error(w, "No se puede descargar un directorio", http.StatusBadRequest)
+			http.Error(w, "Cannot download a directory", http.StatusBadRequest)
 			return
 		}
 
-		// Abrir el archivo
+		// Open the file
 		file, err := os.Open(fullPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -152,42 +152,42 @@ func TestDownloadHandler(t *testing.T) {
 		}
 		defer file.Close()
 
-		// Configurar las cabeceras para la descarga
+		// Configure headers for download
 		w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(filename))
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Length", "0") // Simplificado para la prueba
+		w.Header().Set("Content-Length", "0") // Simplified for the test
 
-		// Enviar el contenido del archivo
+		// Send the file content
 		io.Copy(w, file)
 	})
 
-	// Ejecutar la solicitud
+	// Execute the request
 	handler.ServeHTTP(w, req)
 
-	// Verificar la respuesta
+	// Verify the response
 	resp := w.Result()
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Código de estado incorrecto, esperado: %d, obtenido: %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("Incorrect status code, expected: %d, got: %d", http.StatusOK, resp.StatusCode)
 	}
 
-	// Verificar cabeceras
+	// Verify headers
 	if cd := resp.Header.Get("Content-Disposition"); !strings.Contains(cd, testFilename) {
-		t.Errorf("Content-Disposition incorrecto, esperado que contenga '%s', obtenido: '%s'", testFilename, cd)
+		t.Errorf("Incorrect Content-Disposition, expected to contain '%s', got: '%s'", testFilename, cd)
 	}
 
 	if ct := resp.Header.Get("Content-Type"); ct != "application/octet-stream" {
-		t.Errorf("Content-Type incorrecto, esperado: 'application/octet-stream', obtenido: '%s'", ct)
+		t.Errorf("Incorrect Content-Type, expected: 'application/octet-stream', got: '%s'", ct)
 	}
 
-	// Verificar el contenido
+	// Verify the content
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		t.Fatalf("Error al leer el cuerpo de la respuesta: %v", err)
+		t.Fatalf("Error reading response body: %v", err)
 	}
 
 	if string(body) != testContent {
-		t.Errorf("Contenido incorrecto, esperado: '%s', obtenido: '%s'", testContent, string(body))
+		t.Errorf("Incorrect content, expected: '%s', got: '%s'", testContent, string(body))
 	}
 }

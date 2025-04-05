@@ -1,15 +1,15 @@
 package templates
 
-// Index es la página principal que muestra la lista de archivos
+// Index is the main page that displays the file list
 templ Index(data IndexData) {
 	<div x-data="{ view: 'grid' }">
 		<div class="flex items-center justify-between mb-8">
 			<div>
 				<h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-					Archivos compartidos
+					Shared files
 				</h1>
 				<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-					Directorio: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
+					Directory: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
 				</p>
 			</div>
 
@@ -19,19 +19,19 @@ templ Index(data IndexData) {
 					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'grid'}"
 					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
 				>
-					<i class="fas fa-grip mr-1"></i> Cuadrícula
+					<i class="fas fa-grip mr-1"></i> Grid
 				</button>
 				<button
 					@click="view = 'list'"
 					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'list'}"
 					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
 				>
-					<i class="fas fa-list mr-1"></i> Lista
+					<i class="fas fa-list mr-1"></i> List
 				</button>
 			</div>
 		</div>
 
-		<!-- Vista de cuadrícula -->
+		<!-- Grid view -->
 		<div
 			x-show="view === 'grid'"
 			class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -62,7 +62,7 @@ templ Index(data IndexData) {
 									href={ templ.SafeURL("/download?filename=" + file.Path) }
 									class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center w-full transition-colors"
 								>
-									<i class="fas fa-download mr-2"></i> Descargar
+									<i class="fas fa-download mr-2"></i> Download
 								</a>
 							</div>
 						}
@@ -71,15 +71,15 @@ templ Index(data IndexData) {
 			}
 		</div>
 
-		<!-- Vista de lista -->
+		<!-- List view -->
 		<div x-show="view === 'list'" class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
 			<table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
 				<thead class="bg-gray-50 dark:bg-slate-800">
 					<tr>
-						<th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">Nombre</th>
-						<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-white">Tamaño</th>
+						<th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">Name</th>
+						<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-white">Size</th>
 						<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-							<span class="sr-only">Acciones</span>
+							<span class="sr-only">Actions</span>
 						</th>
 					</tr>
 				</thead>
@@ -110,7 +110,7 @@ templ Index(data IndexData) {
 										href={ templ.SafeURL("/download?filename=" + file.Path) }
 										class="inline-flex items-center gap-x-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors"
 									>
-										<i class="fas fa-download -ml-0.5 h-5 w-5"></i> Descargar
+										<i class="fas fa-download -ml-0.5 h-5 w-5"></i> Download
 									</a>
 								}
 							</td>
@@ -120,20 +120,20 @@ templ Index(data IndexData) {
 			</table>
 		</div>
 
-		<!-- Mensaje si no hay archivos -->
+		<!-- Message if there are no files -->
 		if len(data.Files) == 0 {
 			<div class="text-center py-12">
 				<div class="mx-auto h-12 w-12 text-gray-400">
 					<i class="fas fa-folder-open text-3xl"></i>
 				</div>
-				<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">No hay archivos</h3>
-				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comienza subiendo archivos a esta carpeta.</p>
+				<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">No files</h3>
+				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start by uploading files to this folder.</p>
 				<div class="mt-6">
 					<a
 						href="/upload"
 						class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
 					>
-						<i class="fas fa-upload -ml-0.5 mr-1.5 h-5 w-5"></i> Subir archivos
+						<i class="fas fa-upload -ml-0.5 mr-1.5 h-5 w-5"></i> Upload files
 					</a>
 				</div>
 			</div>

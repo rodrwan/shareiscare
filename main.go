@@ -11,117 +11,117 @@ import (
 	"github.com/rodrwan/shareiscare/handlers"
 )
 
-// Version es la versión del programa, que se inyecta durante la compilación
+// Version is the program version, injected during compilation
 var Version = "dev"
 
-// PrintHelp muestra la ayuda del programa
+// PrintHelp displays program help
 func PrintHelp() {
-	fmt.Printf("ShareIsCare v%s - Servidor de archivos simple\n", Version)
-	fmt.Println("\nUso:")
-	fmt.Println("  shareiscare                       Inicia el servidor")
-	fmt.Println("  shareiscare init [ruta]           Genera archivo de configuración base")
-	fmt.Println("  shareiscare help                  Muestra esta ayuda")
-	fmt.Println("  shareiscare version               Muestra la versión del programa")
-	fmt.Println("\nEjemplos:")
-	fmt.Println("  shareiscare                       Inicia el servidor con config.yaml")
-	fmt.Println("  shareiscare init                  Genera config.yaml en el directorio actual")
-	fmt.Println("  shareiscare init mi-config.yaml   Genera configuración en mi-config.yaml")
+	fmt.Printf("ShareIsCare v%s - Simple file server\n", Version)
+	fmt.Println("\nUsage:")
+	fmt.Println("  shareiscare                       Start the server")
+	fmt.Println("  shareiscare init [path]           Generate base configuration file")
+	fmt.Println("  shareiscare help                  Show this help")
+	fmt.Println("  shareiscare version               Show program version")
+	fmt.Println("\nExamples:")
+	fmt.Println("  shareiscare                       Start server with config.yaml")
+	fmt.Println("  shareiscare init                  Generate config.yaml in current directory")
+	fmt.Println("  shareiscare init my-config.yaml   Generate configuration in my-config.yaml")
 }
 
-// RunServer inicia el servidor HTTP
+// RunServer starts the HTTP server
 func RunServer(config *config.Config) {
-	// Ruta para el handler principal (listado de archivos)
+	// Main handler route (file listing)
 	http.HandleFunc("GET /", handlers.Index(config))
-	// Ruta para descargar archivos
+	// Route for downloading files
 	http.HandleFunc("GET /download", handlers.Download(config))
-	// Ruta de login (GET)
+	// Login route (GET)
 	http.HandleFunc("GET /login", handlers.Login(config))
-	// Ruta de login (POST)
+	// Login route (POST)
 	http.HandleFunc("POST /login", handlers.LoginPost(config))
-	// Ruta de logout
+	// Logout route
 	http.HandleFunc("GET /logout", handlers.Logout(config))
-	// Ruta para mostrar el formulario de subida de archivos (GET) - protegida
+	// Route to display the file upload form (GET) - protected
 	http.HandleFunc("GET /upload", handlers.RequireAuth(handlers.Upload(config), config))
-	// Ruta para procesar la subida de archivos (POST) - protegida
+	// Route to process file uploads (POST) - protected
 	http.HandleFunc("POST /upload", handlers.RequireAuth(handlers.UploadPost(config), config))
 
-	// Iniciar el servidor
+	// Start the server
 	addr := fmt.Sprintf(":%d", config.Port)
-	log.Printf("ShareIsCare v%s iniciado en http://localhost%s", Version, addr)
-	log.Printf("Usuario por defecto: %s / Contraseña: %s", config.Username, config.Password)
+	log.Printf("ShareIsCare v%s started at http://localhost%s", Version, addr)
+	log.Printf("Default user: %s / Password: %s", config.Username, config.Password)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func main() {
-	// Procesar argumentos de línea de comandos
+	// Process command line arguments
 	if len(os.Args) > 1 {
 		cmd := strings.ToLower(os.Args[1])
 
 		switch cmd {
 		case "init":
-			// Comando para generar configuración base
+			// Command to generate base configuration
 			configFile := "config.yaml"
 			if len(os.Args) > 2 {
 				configFile = os.Args[2]
 			}
 
-			// Verificar si el archivo ya existe
+			// Check if the file already exists
 			if _, err := os.Stat(configFile); err == nil {
-				fmt.Printf("El archivo %s ya existe. ¿Deseas sobrescribirlo? (s/n): ", configFile)
+				fmt.Printf("The file %s already exists. Do you want to overwrite it? (y/n): ", configFile)
 				var response string
 				fmt.Scanln(&response)
-				if strings.ToLower(response) != "s" {
-					fmt.Println("Operación cancelada.")
+				if strings.ToLower(response) != "y" {
+					fmt.Println("Operation cancelled.")
 					return
 				}
 			}
 
-			// Generar configuración por defecto
+			// Generate default configuration
 			cfg := config.DefaultConfig()
 			if err := config.SaveConfig(cfg, configFile); err != nil {
-				log.Fatalf("Error al generar la configuración: %v", err)
+				log.Fatalf("Error generating configuration: %v", err)
 			}
 
-			fmt.Printf("Archivo de configuración generado: %s\n", configFile)
-			fmt.Printf("Usuario por defecto: %s / Contraseña: %s\n", cfg.Username, cfg.Password)
-			fmt.Println("IMPORTANTE: Se recomienda cambiar las credenciales por defecto.")
+			fmt.Printf("Configuration file generated: %s\n", configFile)
+			fmt.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
+			fmt.Println("IMPORTANT: It is recommended to change the default credentials.")
 			return
 
 		case "help", "-h", "--help":
-			// Comando de ayuda
+			// Help command
 			PrintHelp()
 			return
 
 		case "version", "-v", "--version":
-			// Comando para mostrar la versión del programa
+			// Command to display program version
 			fmt.Printf("ShareIsCare v%s\n", Version)
 			return
 
 		default:
-			fmt.Printf("Comando desconocido: %s\n\n", cmd)
+			fmt.Printf("Unknown command: %s\n\n", cmd)
 			PrintHelp()
 			return
 		}
 	}
 
-	// Modo normal: iniciar servidor
+	// Normal mode: start server
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error al cargar configuración: %v", err)
+		log.Fatalf("Error loading configuration: %v", err)
 	}
 
-	// Si no existe el archivo de configuración, crearlo
+	// If the configuration file doesn't exist, create it
 	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
-		fmt.Println("No se encontró archivo de configuración. Creando config.yaml con valores por defecto...")
+		fmt.Println("Configuration file not found. Creating config.yaml with default values...")
 		if err := config.SaveConfig(cfg, "config.yaml"); err != nil {
-			log.Printf("Advertencia: No se pudo guardar el archivo de configuración: %v", err)
+			log.Printf("Warning: Could not save configuration file: %v", err)
 		} else {
-			fmt.Println("Archivo de configuración generado: config.yaml")
-			fmt.Printf("Usuario por defecto: %s / Contraseña: %s\n", cfg.Username, cfg.Password)
-			fmt.Println("IMPORTANTE: Se recomienda cambiar las credenciales por defecto.")
+			fmt.Println("Configuration file generated: config.yaml")
+			fmt.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
+			fmt.Println("IMPORTANT: It is recommended to change the default credentials.")
 		}
 	}
 
-	// Iniciar el servidor
+	// Start the server
 	RunServer(cfg)
 }

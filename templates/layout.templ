@@ -1,14 +1,14 @@
 package templates
 
-// Layout es el componente base para todas las páginas
+// Layout is the base component for all pages
 templ Layout(title string) {
 	@LayoutWithData(LayoutData{Title: title})
 }
 
-// LayoutWithData es el componente base para todas las páginas con datos adicionales
+// LayoutWithData is the base component for all pages with additional data
 templ LayoutWithData(data LayoutData) {
 	<!DOCTYPE html>
-	<html lang="es" class="h-full">
+	<html lang="en" class="h-full">
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -73,16 +73,16 @@ templ LayoutWithData(data LayoutData) {
 								</span>
 								<a href="/upload" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
 									<i class="fas fa-upload mr-2 group-hover:animate-pulse"></i>
-									Subir
+									Upload
 								</a>
 								<a href="/logout" class="group inline-flex items-center rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
 									<i class="fas fa-sign-out-alt mr-1"></i>
-									<span class="hidden sm:inline">Cerrar sesión</span>
+									<span class="hidden sm:inline">Logout</span>
 								</a>
 							} else {
 								<a href="/login" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
 									<i class="fas fa-sign-in-alt mr-2 group-hover:animate-pulse"></i>
-									Iniciar sesión
+									Log in
 								</a>
 							}
 						</div>
@@ -105,7 +105,7 @@ templ LayoutWithData(data LayoutData) {
 			<footer class="py-4 bg-transparent">
 				<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 					<p class="text-center text-sm text-gray-500 dark:text-slate-500">
-						ShareIsCare — Compartir archivos nunca fue tan fácil
+						ShareIsCare — Sharing files has never been easier
 					</p>
 				</div>
 			</footer>

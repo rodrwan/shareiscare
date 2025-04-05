@@ -8,54 +8,54 @@ import (
 
 func TestCrossCompilationRaspberryPi(t *testing.T) {
 	if testing.Short() {
-		t.Skip("Omitiendo prueba de compilación cruzada en modo corto")
+		t.Skip("Skipping cross-compilation test in short mode")
 	}
 
-	// Verificar que podemos compilar para Raspberry Pi (ARM)
-	t.Log("Probando compilación para Raspberry Pi (ARM)")
+	// Verify that we can compile for Raspberry Pi (ARM)
+	t.Log("Testing compilation for Raspberry Pi (ARM)")
 
-	// Creamos un nuevo comando con entorno controlado
+	// Create a new command with controlled environment
 	cmd := exec.Command("go", "build", "-o", "/dev/null")
 
-	// Necesitamos establecer todas las variables de entorno necesarias para Go
-	// ya que no estamos heredando el entorno del sistema
+	// We need to set all environment variables needed for Go
+	// as we're not inheriting the system environment
 	env := []string{
 		"GOOS=linux",
 		"GOARCH=arm",
 		"GOARM=7",
-		"CGO_ENABLED=0", // Deshabilitar CGO es importante para cross-compilation
+		"CGO_ENABLED=0", // Disabling CGO is important for cross-compilation
 	}
 
-	// Añadimos las variables de entorno originales que sean relevantes para Go
-	// como PATH y GOPATH
+	// Add original environment variables that are relevant for Go
+	// such as PATH and GOPATH
 	path, err := exec.LookPath("go")
 	if err == nil {
-		t.Logf("Go encontrado en: %s", path)
+		t.Logf("Go found at: %s", path)
 	}
 
-	// Establecemos el entorno para el comando
+	// Set the environment for the command
 	cmd.Env = env
 
-	// Ejecutamos el comando
+	// Run the command
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Logf("Salida del comando: %s", string(output))
-		t.Skipf("Error al compilar para Raspberry Pi (ARM): %v - Saltando este test", err)
+		t.Logf("Command output: %s", string(output))
+		t.Skipf("Error compiling for Raspberry Pi (ARM): %v - Skipping this test", err)
 	} else {
-		t.Log("Compilación para Raspberry Pi (ARM) exitosa")
+		t.Log("Compilation for Raspberry Pi (ARM) successful")
 	}
 }
 
 func TestCurrentPlatformCompilation(t *testing.T) {
-	// Este test verifica la compilación para la plataforma actual
+	// This test verifies compilation for the current platform
 	cmd := exec.Command("go", "build", "-o", "/dev/null")
 
 	err := cmd.Run()
 	if err != nil {
-		t.Errorf("Error al compilar para la plataforma actual (%s/%s): %v",
+		t.Errorf("Error compiling for current platform (%s/%s): %v",
 			runtime.GOOS, runtime.GOARCH, err)
 	} else {
-		t.Logf("Compilación para la plataforma actual (%s/%s) exitosa",
+		t.Logf("Compilation for current platform (%s/%s) successful",
 			runtime.GOOS, runtime.GOARCH)
 	}
 }

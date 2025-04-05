@@ -1,10 +1,10 @@
-# Uso de ShareIsCare en Raspberry Pi
+# Using ShareIsCare on Raspberry Pi
 
-Este documento proporciona instrucciones para instalar y ejecutar ShareIsCare en dispositivos Raspberry Pi.
+This document provides instructions for installing and running ShareIsCare on Raspberry Pi devices.
 
-## Modelos compatibles
+## Compatible models
 
-ShareIsCare ofrece binarios compilados para diferentes arquitecturas ARM:
+ShareIsCare offers compiled binaries for different ARM architectures:
 
 - **ARMv7 (shareiscare-linux-armv7)**:
   - Raspberry Pi 2
@@ -13,129 +13,129 @@ ShareIsCare ofrece binarios compilados para diferentes arquitecturas ARM:
   - Raspberry Pi 400
 
 - **ARMv6 (shareiscare-linux-armv6)**:
-  - Raspberry Pi 1 (todas las versiones)
+  - Raspberry Pi 1 (all versions)
   - Raspberry Pi Zero
   - Raspberry Pi Zero W/WH
   - Raspberry Pi Zero 2 W
 
-## Requisitos
+## Requirements
 
-- Raspberry Pi (cualquier modelo con Raspberry Pi OS / Raspbian)
-- Conexión a Internet (para la descarga inicial)
-- Permisos de administrador (para instalación)
+- Raspberry Pi (any model with Raspberry Pi OS / Raspbian)
+- Internet connection (for initial download)
+- Administrator permissions (for installation)
 
-## Instalación
+## Installation
 
-### Método 1: Descarga directa desde GitHub
+### Method 1: Direct download from GitHub
 
-1. Descarga la última versión para tu modelo desde la [página de releases](https://github.com/rodrwan/shareiscare/releases)
+1. Download the latest version for your model from the [releases page](https://github.com/rodrwan/shareiscare/releases)
    
-   Para Raspberry Pi 2, 3, 4, 400:
+   For Raspberry Pi 2, 3, 4, 400:
    ```bash
    wget https://github.com/rodrwan/shareiscare/releases/latest/download/shareiscare-linux-armv7.zip
    ```
    
-   Para Raspberry Pi 1, Zero, Zero W:
+   For Raspberry Pi 1, Zero, Zero W:
    ```bash
    wget https://github.com/rodrwan/shareiscare/releases/latest/download/shareiscare-linux-armv6.zip
    ```
 
-2. Descomprime el archivo:
+2. Unzip the file:
    ```bash
    unzip shareiscare-linux-armv*.zip
    ```
 
-3. Haz que el binario sea ejecutable:
+3. Make the binary executable:
    ```bash
    chmod +x shareiscare-linux-armv*
    ```
 
-4. Opcional - Mueve el binario a un directorio en el PATH:
+4. Optional - Move the binary to a directory in the PATH:
    ```bash
    sudo mv shareiscare-linux-armv* /usr/local/bin/shareiscare
    ```
 
-### Método 2: Compilar desde el código fuente
+### Method 2: Build from source code
 
-Si prefieres compilar desde el código fuente:
+If you prefer to build from source code:
 
-1. Instala Go (si aún no lo tienes):
+1. Install Go (if you don't have it already):
    ```bash
    sudo apt update
    sudo apt install golang
    ```
 
-2. Clona el repositorio:
+2. Clone the repository:
    ```bash
    git clone https://github.com/rodrwan/shareiscare.git
    cd shareiscare
    ```
 
-3. Instala templ (herramienta necesaria para generar código de plantillas):
+3. Install templ (required tool for generating template code):
    ```bash
    go install github.com/a-h/templ/cmd/templ@latest
    ```
 
-4. Compila el proyecto:
+4. Build the project:
    
-   Para Raspberry Pi 2, 3, 4, 400:
+   For Raspberry Pi 2, 3, 4, 400:
    ```bash
    make build-raspberrypi
    ```
    
-   Para Raspberry Pi 1, Zero, Zero W:
+   For Raspberry Pi 1, Zero, Zero W:
    ```bash
    make build-raspberrypi-zero
    ```
 
-   El binario estará disponible en `./bin/shareiscare-linux-armv7` o `./bin/shareiscare-linux-armv6` respectivamente.
+   The binary will be available in `./bin/shareiscare-linux-armv7` or `./bin/shareiscare-linux-armv6` respectively.
 
-## Configuración
+## Configuration
 
-1. Crea un archivo de configuración (si no usas el que viene con la descarga):
+1. Create a configuration file (if you're not using the one that comes with the download):
    ```bash
    ./shareiscare init
    ```
 
-2. Edita la configuración según tus necesidades:
+2. Edit the configuration according to your needs:
    ```bash
    nano config.yaml
    ```
 
-   Ejemplo de configuración:
+   Example configuration:
    ```yaml
-   # Configuración de ShareIsCare
-   port: 8080        # Puerto en el que se ejecutará el servidor
-   root_dir: "/home/pi/shared_files"     # Directorio a compartir
-   title: "Mi Raspberry Pi - Compartición de archivos"
+   # ShareIsCare Configuration
+   port: 8080        # Port on which the server will run
+   root_dir: "/home/pi/shared_files"     # Directory to share
+   title: "My Raspberry Pi - File Sharing"
    ```
 
-## Uso
+## Usage
 
-1. Inicia el servidor:
+1. Start the server:
    ```bash
    ./shareiscare
    ```
 
-2. Accede al servidor desde un navegador:
-   - Desde la misma Raspberry Pi: `http://localhost:8080`
-   - Desde otro dispositivo en la red: `http://IP_DE_TU_RASPBERRY:8080`
+2. Access the server from a browser:
+   - From the same Raspberry Pi: `http://localhost:8080`
+   - From another device on the network: `http://YOUR_RASPBERRY_IP:8080`
 
-   Para encontrar la IP de tu Raspberry Pi, puedes usar:
+   To find your Raspberry Pi's IP, you can use:
    ```bash
    hostname -I
    ```
 
-## Ejecutar como servicio
+## Run as a service
 
-Para que ShareIsCare se inicie automáticamente al arrancar la Raspberry Pi:
+To make ShareIsCare start automatically when the Raspberry Pi boots:
 
-1. Crea un archivo de servicio systemd:
+1. Create a systemd service file:
    ```bash
    sudo nano /etc/systemd/system/shareiscare.service
    ```
 
-2. Añade el siguiente contenido (ajusta las rutas según tu configuración):
+2. Add the following content (adjust paths according to your configuration):
    ```
    [Unit]
    Description=ShareIsCare File Sharing Server
@@ -153,32 +153,32 @@ Para que ShareIsCare se inicie automáticamente al arrancar la Raspberry Pi:
    WantedBy=multi-user.target
    ```
 
-3. Habilita e inicia el servicio:
+3. Enable and start the service:
    ```bash
    sudo systemctl enable shareiscare
    sudo systemctl start shareiscare
    ```
 
-4. Verifica el estado:
+4. Check the status:
    ```bash
    sudo systemctl status shareiscare
    ```
 
-## Resolución de problemas
+## Troubleshooting
 
-- **Puerto bloqueado**: Asegúrate de que el firewall permita conexiones al puerto configurado:
+- **Blocked port**: Make sure the firewall allows connections to the configured port:
   ```bash
   sudo ufw allow 8080/tcp
   ```
 
-- **Permisos de archivos**: Asegúrate de que el usuario que ejecuta ShareIsCare tenga permisos en el directorio configurado:
+- **File permissions**: Make sure the user running ShareIsCare has permissions on the configured directory:
   ```bash
-  sudo chown -R pi:pi /ruta/al/directorio
+  sudo chown -R pi:pi /path/to/directory
   ```
 
-- **Logs del servicio**: Si estás ejecutando como servicio, puedes ver los logs con:
+- **Service logs**: If you're running as a service, you can view logs with:
   ```bash
   sudo journalctl -u shareiscare
   ```
 
-- **Error "Exec format error"**: Significa que estás usando el binario incorrecto para tu modelo de Raspberry Pi. Verifica qué modelo tienes y usa el binario apropiado (ARMv6 o ARMv7). 
+- **"Exec format error"**: This means you're using the wrong binary for your Raspberry Pi model. Check which model you have and use the appropriate binary (ARMv6 or ARMv7). 

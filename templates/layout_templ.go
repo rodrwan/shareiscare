@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Layout es el componente base para todas las páginas
+// Layout is the base component for all pages
 func Layout(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -38,7 +38,7 @@ func Layout(title string) templ.Component {
 	})
 }
 
-// LayoutWithData es el componente base para todas las páginas con datos adicionales
+// LayoutWithData is the base component for all pages with additional data
 func LayoutWithData(data LayoutData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -60,7 +60,7 @@ func LayoutWithData(data LayoutData) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"es\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -91,12 +91,12 @@ func LayoutWithData(data LayoutData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <a href=\"/upload\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-upload mr-2 group-hover:animate-pulse\"></i> Subir</a> <a href=\"/logout\" class=\"group inline-flex items-center rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white\"><i class=\"fas fa-sign-out-alt mr-1\"></i> <span class=\"hidden sm:inline\">Cerrar sesión</span></a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <a href=\"/upload\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-upload mr-2 group-hover:animate-pulse\"></i> Upload</a> <a href=\"/logout\" class=\"group inline-flex items-center rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white\"><i class=\"fas fa-sign-out-alt mr-1\"></i> <span class=\"hidden sm:inline\">Logout</span></a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<a href=\"/login\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-sign-in-alt mr-2 group-hover:animate-pulse\"></i> Iniciar sesión</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<a href=\"/login\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-sign-in-alt mr-2 group-hover:animate-pulse\"></i> Log in</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -109,7 +109,7 @@ func LayoutWithData(data LayoutData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div></div></div></div></main><footer class=\"py-4 bg-transparent\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><p class=\"text-center text-sm text-gray-500 dark:text-slate-500\">ShareIsCare — Compartir archivos nunca fue tan fácil</p></div></footer></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div></div></div></div></main><footer class=\"py-4 bg-transparent\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><p class=\"text-center text-sm text-gray-500 dark:text-slate-500\">ShareIsCare — Sharing files has never been easier</p></div></footer></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

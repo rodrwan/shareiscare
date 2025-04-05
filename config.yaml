@@ -1,5 +1,5 @@
-# Configuración de ShareIsCare
-# Nota: Cambiar las credenciales por defecto por seguridad
+# ShareIsCare Configuration
+# Note: Change default credentials for security
 port: 8080
 root_dir: .
 title: ShareIsCare
