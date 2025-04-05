@@ -30,28 +30,86 @@ func Layout(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = LayoutWithData(LayoutData{Title: title}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// LayoutWithData es el componente base para todas las páginas con datos adicionales
+func LayoutWithData(data LayoutData) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"es\" class=\"h-full\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layout.templ`, Line: 10, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layout.templ`, Line: 15, Col: 21}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script defer src=\"https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js\"></script><link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\"><script>\n\t\t\ttailwind.config = {\n\t\t\t\ttheme: {\n\t\t\t\t\textend: {\n\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\tprimary: {\n\t\t\t\t\t\t\t\t50: '#f0f9ff',\n\t\t\t\t\t\t\t\t100: '#e0f2fe',\n\t\t\t\t\t\t\t\t200: '#bae6fd',\n\t\t\t\t\t\t\t\t300: '#7dd3fc',\n\t\t\t\t\t\t\t\t400: '#38bdf8',\n\t\t\t\t\t\t\t\t500: '#0ea5e9',\n\t\t\t\t\t\t\t\t600: '#0284c7',\n\t\t\t\t\t\t\t\t700: '#0369a1',\n\t\t\t\t\t\t\t\t800: '#075985',\n\t\t\t\t\t\t\t\t900: '#0c4a6e',\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t</script><style>\n\t\t\tbody {\n\t\t\t\tbackground-image: linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246));\n\t\t\t\tbackground-attachment: fixed;\n\t\t\t\tmin-height: 100vh;\n\t\t\t}\n\n\t\t\t@media (prefers-color-scheme: dark) {\n\t\t\t\tbody {\n\t\t\t\t\tbackground-image: linear-gradient(to bottom right, rgb(15, 23, 42), rgb(15, 23, 42));\n\t\t\t\t\tbackground-attachment: fixed;\n\t\t\t\t}\n\t\t\t}\n\t\t</style></head><body class=\"h-full antialiased text-slate-500 dark:text-slate-400\"><div class=\"min-h-full flex flex-col\"><header class=\"shadow-sm sticky top-0 z-10 backdrop-blur bg-white/95 dark:bg-slate-900/95 transition-colors\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><div class=\"flex h-16 items-center justify-between\"><div class=\"flex items-center\"><a href=\"/\" class=\"flex items-center space-x-2\"><div class=\"bg-gradient-to-r from-primary-600 to-indigo-600 text-white p-2 rounded-md\"><i class=\"fas fa-share-nodes\"></i></div><span class=\"text-xl font-bold text-gray-900 dark:text-white\">ShareIsCare</span></a></div><div><a href=\"/upload\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-upload mr-2 group-hover:animate-pulse\"></i> Subir</a></div></div></div></header><main class=\"flex-grow\"><div class=\"mx-auto max-w-7xl py-6 sm:px-6 lg:px-8\"><div class=\"px-4 sm:px-0\"><div class=\"overflow-hidden rounded-xl bg-white shadow dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-800\"><div class=\"p-6\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><script src=\"https://cdn.tailwindcss.com\"></script><script defer src=\"https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js\"></script><link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css\"><script>\n\t\t\ttailwind.config = {\n\t\t\t\ttheme: {\n\t\t\t\t\textend: {\n\t\t\t\t\t\tcolors: {\n\t\t\t\t\t\t\tprimary: {\n\t\t\t\t\t\t\t\t50: '#f0f9ff',\n\t\t\t\t\t\t\t\t100: '#e0f2fe',\n\t\t\t\t\t\t\t\t200: '#bae6fd',\n\t\t\t\t\t\t\t\t300: '#7dd3fc',\n\t\t\t\t\t\t\t\t400: '#38bdf8',\n\t\t\t\t\t\t\t\t500: '#0ea5e9',\n\t\t\t\t\t\t\t\t600: '#0284c7',\n\t\t\t\t\t\t\t\t700: '#0369a1',\n\t\t\t\t\t\t\t\t800: '#075985',\n\t\t\t\t\t\t\t\t900: '#0c4a6e',\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t</script><style>\n\t\t\tbody {\n\t\t\t\tbackground-image: linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246));\n\t\t\t\tbackground-attachment: fixed;\n\t\t\t\tmin-height: 100vh;\n\t\t\t}\n\n\t\t\t@media (prefers-color-scheme: dark) {\n\t\t\t\tbody {\n\t\t\t\t\tbackground-image: linear-gradient(to bottom right, rgb(15, 23, 42), rgb(15, 23, 42));\n\t\t\t\t\tbackground-attachment: fixed;\n\t\t\t\t}\n\t\t\t}\n\t\t</style></head><body class=\"h-full antialiased text-slate-500 dark:text-slate-400\"><div class=\"min-h-full flex flex-col\"><header class=\"shadow-sm sticky top-0 z-10 backdrop-blur bg-white/95 dark:bg-slate-900/95 transition-colors\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><div class=\"flex h-16 items-center justify-between\"><div class=\"flex items-center\"><a href=\"/\" class=\"flex items-center space-x-2\"><div class=\"bg-gradient-to-r from-primary-600 to-indigo-600 text-white p-2 rounded-md\"><i class=\"fas fa-share-nodes\"></i></div><span class=\"text-xl font-bold text-gray-900 dark:text-white\">ShareIsCare</span></a></div><div class=\"flex items-center space-x-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div></div></div></main><footer class=\"py-4 bg-transparent\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><p class=\"text-center text-sm text-gray-500 dark:text-slate-500\">ShareIsCare — Compartir archivos nunca fue tan fácil</p></div></footer></div></body></html>")
+		if data.IsLoggedIn {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span class=\"text-sm text-gray-700 dark:text-gray-300 hidden md:inline-block\"><i class=\"fas fa-user mr-1 text-primary-600\"></i> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Username)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layout.templ`, Line: 72, Col: 74}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span> <a href=\"/upload\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-upload mr-2 group-hover:animate-pulse\"></i> Subir</a> <a href=\"/logout\" class=\"group inline-flex items-center rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white\"><i class=\"fas fa-sign-out-alt mr-1\"></i> <span class=\"hidden sm:inline\">Cerrar sesión</span></a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<a href=\"/login\" class=\"group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105\"><i class=\"fas fa-sign-in-alt mr-2 group-hover:animate-pulse\"></i> Iniciar sesión</a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div></div></header><main class=\"flex-grow\"><div class=\"mx-auto max-w-7xl py-6 sm:px-6 lg:px-8\"><div class=\"px-4 sm:px-0\"><div class=\"overflow-hidden rounded-xl bg-white shadow dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-800\"><div class=\"p-6\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ_7745c5c3_Var2.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div></div></div></div></main><footer class=\"py-4 bg-transparent\"><div class=\"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8\"><p class=\"text-center text-sm text-gray-500 dark:text-slate-500\">ShareIsCare — Compartir archivos nunca fue tan fácil</p></div></footer></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

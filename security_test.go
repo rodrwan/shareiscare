@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/rodrwan/shareiscare/config"
 )
 
 func TestSecurityPathValidation(t *testing.T) {
@@ -33,7 +35,7 @@ func TestSecurityPathValidation(t *testing.T) {
 	}
 
 	// Configuración para la prueba
-	config := &Config{
+	config := &config.Config{
 		Port:    8080,
 		RootDir: rootDir,
 		Title:   "Test Server",

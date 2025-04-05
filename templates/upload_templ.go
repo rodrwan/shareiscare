@@ -8,14 +8,6 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// UploadData contiene los datos para la página de subida de archivos
-type UploadData struct {
-	Title     string
-	Directory string
-	Success   bool
-	Message   string
-}
-
 // Upload es la página para subir archivos
 func Upload(data UploadData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -38,80 +30,61 @@ func Upload(data UploadData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-			if !templ_7745c5c3_IsBuffer {
-				defer func() {
-					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err == nil {
-						templ_7745c5c3_Err = templ_7745c5c3_BufErr
-					}
-				}()
-			}
-			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"{\n\t\t\tdragOver: false,\n\t\t\tfiles: [],\n\t\t\tuploading: false,\n\t\t\thandleDrop(e) {\n\t\t\t\te.preventDefault();\n\t\t\t\tthis.dragOver = false;\n\t\t\t\tif (e.dataTransfer.files.length &gt; 0) {\n\t\t\t\t\tthis.files = e.dataTransfer.files;\n\t\t\t\t\tdocument.getElementById(&#39;files&#39;).files = e.dataTransfer.files;\n\t\t\t\t}\n\t\t\t},\n\t\t\tremoveFile(index) {\n\t\t\t\t// No podemos modificar FileList directamente, esto es solo visual\n\t\t\t\tthis.files = Array.from(this.files).filter((_, i) =&gt; i !== index);\n\t\t\t},\n\t\t\tsubmitForm() {\n\t\t\t\tthis.uploading = true;\n\t\t\t\tdocument.getElementById(&#39;upload-form&#39;).submit();\n\t\t\t}\n\t\t}\"><div class=\"flex items-center justify-between mb-8\"><div><h1 class=\"text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl\">Subir archivos</h1><p class=\"mt-2 text-sm text-gray-600 dark:text-gray-400\">Los archivos se subirán a: <span class=\"font-medium text-gray-900 dark:text-white\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><div class=\"sm:flex sm:items-center\"><div class=\"sm:flex-auto\"><h1 class=\"text-2xl font-semibold leading-6 text-gray-900 dark:text-white\">Subir archivos</h1><p class=\"mt-2 text-sm text-gray-700 dark:text-gray-300\">Desde aquí puedes subir archivos al directorio: <span class=\"font-medium text-gray-900 dark:text-white\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.Directory)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 10, Col: 126}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span></p></div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.Success {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"mt-6 rounded-md bg-green-50 dark:bg-green-900/30 p-4\"><div class=\"flex\"><div class=\"flex-shrink-0\"><i class=\"fas fa-check-circle text-green-400 dark:text-green-500 h-5 w-5\"></i></div><div class=\"ml-3\"><h3 class=\"text-sm font-medium text-green-800 dark:text-green-300\">Éxito</h3><div class=\"mt-2 text-sm text-green-700 dark:text-green-400\"><p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Directory)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Message)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 41, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 24, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span></p></div><div><a href=\"/\" class=\"group flex items-center text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors\"><i class=\"fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform\"></i> Volver al listado</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if data.Success {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"rounded-lg bg-green-50 dark:bg-green-900/30 p-4 mb-6\"><div class=\"flex items-center\"><div class=\"flex-shrink-0\"><i class=\"fas fa-check-circle text-green-500 dark:text-green-400 text-lg\"></i></div><div class=\"ml-3\"><p class=\"text-sm font-medium text-green-800 dark:text-green-300\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Message)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 59, Col: 87}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			if data.Message != "" && !data.Success {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"rounded-lg bg-red-50 dark:bg-red-900/30 p-4 mb-6\"><div class=\"flex items-center\"><div class=\"flex-shrink-0\"><i class=\"fas fa-exclamation-circle text-red-500 dark:text-red-400 text-lg\"></i></div><div class=\"ml-3\"><p class=\"text-sm font-medium text-red-800 dark:text-red-300\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Message)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 72, Col: 83}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div></div></div>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<form id=\"upload-form\" action=\"/upload\" method=\"post\" enctype=\"multipart/form-data\" class=\"space-y-8\" @submit.prevent=\"submitForm()\"><div @dragover.prevent=\"dragOver = true\" @dragleave.prevent=\"dragOver = false\" @drop=\"handleDrop\" :class=\"{&#39;border-primary-500 bg-primary-50 dark:bg-primary-900/20&#39;: dragOver}\" class=\"relative block w-full rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center transition-colors hover:border-gray-400 dark:hover:border-gray-600 focus:outline-none\"><input id=\"files\" name=\"files\" type=\"file\" multiple class=\"absolute inset-0 z-50 w-full h-full opacity-0 cursor-pointer\" @change=\"files = $event.target.files\"><div class=\"text-center\"><i class=\"fas fa-cloud-arrow-up mx-auto text-4xl text-gray-400 dark:text-gray-500 mb-4\"></i><div class=\"flex text-sm text-gray-600 dark:text-gray-400\"><label for=\"files\" class=\"mx-auto relative cursor-pointer rounded-md font-medium text-primary-600 dark:text-primary-400 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 hover:text-primary-500 dark:hover:text-primary-300\"><span>Selecciona archivos</span></label></div><p class=\"text-xs text-gray-500 dark:text-gray-400 mt-2\">O arrastra y suelta archivos aquí</p></div></div><div x-show=\"files.length &gt; 0\" class=\"mt-4\"><h4 class=\"text-sm font-medium text-gray-900 dark:text-white mb-2\">Archivos seleccionados</h4><ul role=\"list\" class=\"divide-y divide-gray-200 dark:divide-gray-700 rounded-md border border-gray-200 dark:border-gray-700\"><template x-for=\"(file, index) in files\" :key=\"index\"><li class=\"flex items-center justify-between py-3 pl-4 pr-5 text-sm\"><div class=\"flex items-center flex-1 min-w-0\"><i class=\"fas fa-file flex-shrink-0 text-gray-400 dark:text-gray-500\"></i><div class=\"ml-3 flex-1 truncate\"><span x-text=\"file.name\" class=\"font-medium text-gray-900 dark:text-white truncate\"></span> <span x-text=\"(file.size / 1024).toFixed(2) + &#39; KB&#39;\" class=\"ml-1 text-gray-500 dark:text-gray-400 truncate\"></span></div></div><div class=\"ml-4 flex-shrink-0\"><button type=\"button\" @click=\"removeFile(index)\" class=\"font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300\"><i class=\"fas fa-times\"></i></button></div></li></template></ul></div><div class=\"flex justify-end\"><button type=\"submit\" class=\"inline-flex items-center gap-x-2 rounded-md bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed\" x-bind:disabled=\"uploading || files.length === 0\"><span x-show=\"!uploading\">Subir archivos</span> <span x-show=\"uploading\" class=\"flex items-center\"><svg class=\"animate-spin -ml-1 mr-2 h-4 w-4 text-white\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\"><circle class=\"opacity-25\" cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"4\"></circle> <path class=\"opacity-75\" fill=\"currentColor\" d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\"></path></svg> Subiendo...</span></button></div></form></div>")
+		} else if data.Message != "" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mt-6 rounded-md bg-red-50 dark:bg-red-900/30 p-4\"><div class=\"flex\"><div class=\"flex-shrink-0\"><i class=\"fas fa-exclamation-circle text-red-400 dark:text-red-500 h-5 w-5\"></i></div><div class=\"ml-3\"><h3 class=\"text-sm font-medium text-red-800 dark:text-red-300\">Error</h3><div class=\"mt-2 text-sm text-red-700 dark:text-red-400\"><p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			return nil
-		})
-		templ_7745c5c3_Err = Layout(data.Title+" - Subir archivos").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Message)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/upload.templ`, Line: 38, Col: 24}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div x-data=\"{\n\t\t\tdragOver: false,\n\t\t\tfiles: [],\n\t\t\tuploading: false,\n\t\t\thandleDrop(e) {\n\t\t\t\te.preventDefault();\n\t\t\t\tthis.dragOver = false;\n\t\t\t\tif (e.dataTransfer.files.length &gt; 0) {\n\t\t\t\t\tthis.files = e.dataTransfer.files;\n\t\t\t\t\tdocument.getElementById(&#39;files&#39;).files = e.dataTransfer.files;\n\t\t\t\t}\n\t\t\t},\n\t\t\tremoveFile(index) {\n\t\t\t\t// No podemos modificar FileList directamente, esto es solo visual\n\t\t\t\tthis.files = Array.from(this.files).filter((_, i) =&gt; i !== index);\n\t\t\t},\n\t\t\tsubmitForm() {\n\t\t\t\tthis.uploading = true;\n\t\t\t\tdocument.getElementById(&#39;upload-form&#39;).submit();\n\t\t\t}\n\t\t}\" class=\"mt-8\"><form id=\"upload-form\" method=\"post\" action=\"/upload\" enctype=\"multipart/form-data\" @submit=\"uploading = true\" class=\"space-y-8\"><div @dragover.prevent=\"dragOver = true\" @dragleave.prevent=\"dragOver = false\" @drop=\"handleDrop\" :class=\"{&#39;border-primary-400 bg-primary-50 dark:bg-primary-900/20&#39;: dragOver}\" class=\"mt-2 flex justify-center rounded-lg border border-dashed border-gray-300 dark:border-gray-700 px-6 py-10 transition-colors duration-200\"><div class=\"text-center\"><i class=\"fas fa-cloud-upload-alt mx-auto h-12 w-12 text-gray-400 dark:text-gray-500\"></i><div class=\"mt-4 flex text-sm leading-6 text-gray-600 dark:text-gray-400\"><label for=\"files\" class=\"relative cursor-pointer rounded-md bg-white dark:bg-slate-800 font-semibold text-primary-600 dark:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-600 focus-within:ring-offset-2 hover:text-primary-500 dark:hover:text-primary-400 transition-colors\"><span>Seleccionar archivos</span> <input id=\"files\" name=\"files\" type=\"file\" multiple @change=\"files = $event.target.files\" class=\"sr-only\"></label><p class=\"pl-1\">o arrastra y suelta</p></div><p class=\"text-xs leading-5 text-gray-600 dark:text-gray-400\">Archivos de hasta 32MB</p></div></div><!-- Vista previa de archivos seleccionados --><div x-show=\"files.length &gt; 0\" class=\"mt-4\"><h3 class=\"text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">Archivos seleccionados:</h3><ul class=\"divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden\"><template x-for=\"(file, index) in Array.from(files)\" :key=\"index\"><li class=\"px-4 py-3 flex items-center justify-between bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors\"><div class=\"flex items-center max-w-xs sm:max-w-lg\"><i class=\"fas fa-file text-primary-500 mr-3\"></i> <span class=\"text-sm text-gray-900 dark:text-white truncate\" x-text=\"file.name\"></span></div><div class=\"flex items-center\"><span class=\"text-xs text-gray-500 dark:text-gray-400 mr-3\" x-text=\"formatBytes(file.size)\"></span> <button type=\"button\" @click=\"removeFile(index)\" class=\"text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors\"><i class=\"fas fa-times\"></i></button></div></li></template></ul></div><div class=\"flex justify-end\"><a href=\"/\" class=\"rounded-md bg-white dark:bg-transparent px-3.5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 mr-3 transition-colors\">Cancelar</a> <button type=\"submit\" :disabled=\"uploading || files.length === 0\" :class=\"{&#39;opacity-50 cursor-not-allowed&#39;: uploading || files.length === 0}\" class=\"rounded-md bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors\"><span x-show=\"!uploading\"><i class=\"fas fa-upload mr-1\"></i> Subir</span> <span x-show=\"uploading\"><i class=\"fas fa-spinner fa-spin mr-1\"></i> Subiendo...</span></button></div></form></div></div><script>\n\t\tfunction formatBytes(bytes, decimals = 2) {\n\t\t\tif (bytes === 0) return '0 Bytes';\n\n\t\t\tconst k = 1024;\n\t\t\tconst dm = decimals < 0 ? 0 : decimals;\n\t\t\tconst sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];\n\n\t\t\tconst i = Math.floor(Math.log(bytes) / Math.log(k));\n\n\t\t\treturn parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

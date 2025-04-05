@@ -4,10 +4,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/rodrwan/shareiscare/config"
 )
 
 func TestDefaultConfig(t *testing.T) {
-	config := DefaultConfig()
+	config := config.DefaultConfig()
 
 	if config.Port != 8080 {
 		t.Errorf("Puerto incorrecto, esperado: 8080, obtenido: %d", config.Port)
@@ -33,14 +35,14 @@ func TestSaveAndLoadConfig(t *testing.T) {
 	testConfigPath := filepath.Join(tempDir, "test-config.yaml")
 
 	// Crear configuración personalizada para guardar
-	testConfig := &Config{
+	testConfig := &config.Config{
 		Port:    9090,
 		RootDir: "/test/dir",
 		Title:   "Test Title",
 	}
 
 	// Probar SaveConfig
-	err = SaveConfig(testConfig, testConfigPath)
+	err = config.SaveConfig(testConfig, testConfigPath)
 	if err != nil {
 		t.Fatalf("Error al guardar configuración: %v", err)
 	}
@@ -78,7 +80,7 @@ func TestSaveAndLoadConfig(t *testing.T) {
 	}
 
 	// Ahora podemos probar LoadConfig
-	loadedConfig, err := LoadConfig()
+	loadedConfig, err := config.LoadConfig()
 	if err != nil {
 		t.Fatalf("Error al cargar configuración: %v", err)
 	}

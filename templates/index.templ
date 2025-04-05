@@ -1,162 +1,142 @@
 package templates
 
-// FileInfo representa la información de un archivo para mostrar en la lista
-type FileInfo struct {
-	Name string
-	Path string
-	Size string
-	IsDir bool
-}
-
-// IndexData contiene los datos para la página de inicio
-type IndexData struct {
-	Title     string
-	Directory string
-	Files     []FileInfo
-}
-
 // Index es la página principal que muestra la lista de archivos
 templ Index(data IndexData) {
-	@Layout(data.Title) {
-		<div x-data="{ view: 'grid' }">
-			<div class="flex items-center justify-between mb-8">
-				<div>
-					<h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-						Archivos compartidos
-					</h1>
-					<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-						Directorio: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
-					</p>
-				</div>
-
-				<div class="mt-4 sm:mt-0 flex space-x-3">
-					<div class="rounded-md border border-gray-300 dark:border-gray-700 p-1 flex">
-						<button
-							@click="view = 'grid'"
-							:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'grid'}"
-							class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-						>
-							<i class="fas fa-grip mr-1"></i> Cuadrícula
-						</button>
-						<button
-							@click="view = 'list'"
-							:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'list'}"
-							class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
-						>
-							<i class="fas fa-list mr-1"></i> Lista
-						</button>
-					</div>
-				</div>
+	<div x-data="{ view: 'grid' }">
+		<div class="flex items-center justify-between mb-8">
+			<div>
+				<h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+					Archivos compartidos
+				</h1>
+				<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+					Directorio: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
+				</p>
 			</div>
 
-			<!-- Vista de cuadrícula -->
-			<div x-show="view === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-				for _, file := range data.Files {
-					<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-shadow">
-						<div class="p-4 sm:p-6">
-							<div class="flex items-center">
-								if file.IsDir {
-									<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3 flex-shrink-0">
-										<i class="fas fa-folder text-amber-600 dark:text-amber-400 text-xl"></i>
-									</div>
-								} else {
-									<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-3 flex-shrink-0">
-										<i class="fas fa-file text-sky-600 dark:text-sky-400 text-xl"></i>
-									</div>
-								}
-								<div class="ml-4 flex-1 min-w-0">
-									<h3 class="text-base font-medium text-gray-900 dark:text-white truncate">
-										{ file.Name }
-									</h3>
-									<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{ file.Size }</p>
-								</div>
-							</div>
+			<div class="rounded-md border border-gray-300 dark:border-gray-700 p-1 flex">
+				<button
+					@click="view = 'grid'"
+					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'grid'}"
+					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+				>
+					<i class="fas fa-grip mr-1"></i> Cuadrícula
+				</button>
+				<button
+					@click="view = 'list'"
+					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'list'}"
+					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+				>
+					<i class="fas fa-list mr-1"></i> Lista
+				</button>
+			</div>
+		</div>
 
-							if !file.IsDir {
-								<div class="mt-4 flex">
-									<a
-										href={ templ.SafeURL("/download?filename=" + file.Path) }
-										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center w-full transition-colors"
-									>
-										<i class="fas fa-download mr-2"></i>
-										Descargar
-									</a>
+		<!-- Vista de cuadrícula -->
+		<div
+			x-show="view === 'grid'"
+			class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+		>
+			for _, file := range data.Files {
+				<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-shadow">
+					<div class="p-4 sm:p-6">
+						<div class="flex items-center">
+							if file.IsDir {
+								<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3 flex-shrink-0">
+									<i class="fas fa-folder text-amber-600 dark:text-amber-400 text-xl"></i>
+								</div>
+							} else {
+								<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-3 flex-shrink-0">
+									<i class="fas fa-file text-sky-600 dark:text-sky-400 text-xl"></i>
 								</div>
 							}
+							<div class="ml-4 flex-1 min-w-0">
+								<h3 class="text-base font-medium text-gray-900 dark:text-white truncate">
+									{ file.Name }
+								</h3>
+								<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{ file.Size }</p>
+							</div>
 						</div>
-					</div>
-				}
-			</div>
-
-			<!-- Vista de lista -->
-			<div x-show="view === 'list'" class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-				<table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-					<thead class="bg-gray-50 dark:bg-slate-800">
-						<tr>
-							<th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">Nombre</th>
-							<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-white">Tamaño</th>
-							<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-								<span class="sr-only">Acciones</span>
-							</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-slate-800/50">
-						for _, file := range data.Files {
-							<tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-								<td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-									if file.IsDir {
-										<div class="flex items-center">
-											<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-1.5 flex-shrink-0">
-												<i class="fas fa-folder text-amber-600 dark:text-amber-400"></i>
-											</div>
-											<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
-										</div>
-									} else {
-										<div class="flex items-center">
-											<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-1.5 flex-shrink-0">
-												<i class="fas fa-file text-sky-600 dark:text-sky-400"></i>
-											</div>
-											<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
-										</div>
-									}
-								</td>
-								<td class="whitespace-nowrap px-3 py-4 text-right text-sm text-gray-500 dark:text-gray-400">{ file.Size }</td>
-								<td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-									if !file.IsDir {
-										<a
-											href={ templ.SafeURL("/download?filename=" + file.Path) }
-											class="inline-flex items-center gap-x-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors"
-										>
-											<i class="fas fa-download -ml-0.5 h-5 w-5"></i>
-											Descargar
-										</a>
-									}
-								</td>
-							</tr>
+						if !file.IsDir {
+							<div class="mt-4 flex">
+								<a
+									href={ templ.SafeURL("/download?filename=" + file.Path) }
+									class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center w-full transition-colors"
+								>
+									<i class="fas fa-download mr-2"></i> Descargar
+								</a>
+							</div>
 						}
-					</tbody>
-				</table>
-			</div>
-
-			<!-- Mensaje si no hay archivos -->
-			if len(data.Files) == 0 {
-				<div class="text-center py-12">
-					<div class="mx-auto h-12 w-12 text-gray-400">
-						<i class="fas fa-folder-open text-3xl"></i>
-					</div>
-					<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">No hay archivos</h3>
-					<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comienza subiendo archivos a esta carpeta.</p>
-					<div class="mt-6">
-						<a
-							href="/upload"
-							class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-						>
-							<i class="fas fa-upload -ml-0.5 mr-1.5 h-5 w-5"></i>
-							Subir archivos
-						</a>
 					</div>
 				</div>
 			}
 		</div>
-	}
+
+		<!-- Vista de lista -->
+		<div x-show="view === 'list'" class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+			<table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+				<thead class="bg-gray-50 dark:bg-slate-800">
+					<tr>
+						<th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">Nombre</th>
+						<th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-white">Tamaño</th>
+						<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+							<span class="sr-only">Acciones</span>
+						</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-slate-800/50">
+					for _, file := range data.Files {
+						<tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+							<td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+								if file.IsDir {
+									<div class="flex items-center">
+										<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-1.5 flex-shrink-0">
+											<i class="fas fa-folder text-amber-600 dark:text-amber-400"></i>
+										</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
+									</div>
+								} else {
+									<div class="flex items-center">
+										<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-1.5 flex-shrink-0">
+											<i class="fas fa-file text-sky-600 dark:text-sky-400"></i>
+										</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
+									</div>
+								}
+							</td>
+							<td class="whitespace-nowrap px-3 py-4 text-right text-sm text-gray-500 dark:text-gray-400">{ file.Size }</td>
+							<td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+								if !file.IsDir {
+									<a
+										href={ templ.SafeURL("/download?filename=" + file.Path) }
+										class="inline-flex items-center gap-x-1.5 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transition-colors"
+									>
+										<i class="fas fa-download -ml-0.5 h-5 w-5"></i> Descargar
+									</a>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Mensaje si no hay archivos -->
+		if len(data.Files) == 0 {
+			<div class="text-center py-12">
+				<div class="mx-auto h-12 w-12 text-gray-400">
+					<i class="fas fa-folder-open text-3xl"></i>
+				</div>
+				<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">No hay archivos</h3>
+				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Comienza subiendo archivos a esta carpeta.</p>
+				<div class="mt-6">
+					<a
+						href="/upload"
+						class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+					>
+						<i class="fas fa-upload -ml-0.5 mr-1.5 h-5 w-5"></i> Subir archivos
+					</a>
+				</div>
+			</div>
+		}
+	</div>
 }

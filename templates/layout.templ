@@ -2,12 +2,17 @@ package templates
 
 // Layout es el componente base para todas las páginas
 templ Layout(title string) {
+	@LayoutWithData(LayoutData{Title: title})
+}
+
+// LayoutWithData es el componente base para todas las páginas con datos adicionales
+templ LayoutWithData(data LayoutData) {
 	<!DOCTYPE html>
 	<html lang="es" class="h-full">
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<title>{ title }</title>
+		<title>{ data.Title }</title>
 		<script src="https://cdn.tailwindcss.com"></script>
 		<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -61,11 +66,25 @@ templ Layout(title string) {
 								<span class="text-xl font-bold text-gray-900 dark:text-white">ShareIsCare</span>
 							</a>
 						</div>
-						<div>
-							<a href="/upload" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
-								<i class="fas fa-upload mr-2 group-hover:animate-pulse"></i>
-								Subir
-							</a>
+						<div class="flex items-center space-x-3">
+							if data.IsLoggedIn {
+								<span class="text-sm text-gray-700 dark:text-gray-300 hidden md:inline-block">
+									<i class="fas fa-user mr-1 text-primary-600"></i> { data.Username }
+								</span>
+								<a href="/upload" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
+									<i class="fas fa-upload mr-2 group-hover:animate-pulse"></i>
+									Subir
+								</a>
+								<a href="/logout" class="group inline-flex items-center rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+									<i class="fas fa-sign-out-alt mr-1"></i>
+									<span class="hidden sm:inline">Cerrar sesión</span>
+								</a>
+							} else {
+								<a href="/login" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
+									<i class="fas fa-sign-in-alt mr-2 group-hover:animate-pulse"></i>
+									Iniciar sesión
+								</a>
+							}
 						</div>
 					</div>
 				</div>

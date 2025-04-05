@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/rodrwan/shareiscare/config"
 )
 
 func TestUploadHandler(t *testing.T) {
@@ -22,7 +24,7 @@ func TestUploadHandler(t *testing.T) {
 
 	// Configuración para la prueba
 	// La configuración se utiliza indirectamente en los handlers
-	_ = &Config{
+	_ = &config.Config{
 		Port:    8080,
 		RootDir: tempDir,
 		Title:   "Test Server",

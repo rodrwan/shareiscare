@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/rodrwan/shareiscare/config"
 )
 
 func TestIndexHandler(t *testing.T) {
@@ -34,7 +36,7 @@ func TestIndexHandler(t *testing.T) {
 	}
 
 	// Configuración para la prueba
-	config := &Config{
+	config := &config.Config{
 		Port:    8080,
 		RootDir: tempDir,
 		Title:   "Test Server",
@@ -110,7 +112,7 @@ func TestDownloadHandler(t *testing.T) {
 	}
 
 	// Configuración para la prueba
-	config := &Config{
+	config := &config.Config{
 		Port:    8080,
 		RootDir: tempDir,
 		Title:   "Test Server",
