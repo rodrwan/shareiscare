@@ -22,7 +22,7 @@ else
     OS = windows
 endif
 
-.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi release test
+.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero release test
 
 all: help
 
@@ -59,15 +59,26 @@ test:
 	fi
 	@# Ejecutar tests (excluyendo el test de compilación cruzada)
 	@$(GO) test -v ./... -short
-	@# Verificar compilación para Raspberry Pi directamente
-	@echo "$(YELLOW)Verificando compilación para Raspberry Pi...$(NC)"
+	@# Verificar compilación para Raspberry Pi (ARMv7)
+	@echo "$(YELLOW)Verificando compilación para Raspberry Pi (ARMv7)...$(NC)"
 	@GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm-test main.go; \
 	EXIT_CODE=$$?; \
 	if [ $$EXIT_CODE -eq 0 ]; then \
-		echo "$(GREEN)✓ La compilación para Raspberry Pi es correcta$(NC)"; \
+		echo "$(GREEN)✓ La compilación para Raspberry Pi (ARMv7) es correcta$(NC)"; \
 		rm /tmp/shareiscare-arm-test; \
 	else \
-		echo "$(RED)✗ Error en la compilación para Raspberry Pi$(NC)"; \
+		echo "$(RED)✗ Error en la compilación para Raspberry Pi (ARMv7)$(NC)"; \
+		exit 1; \
+	fi
+	@# Verificar compilación para Raspberry Pi Zero (ARMv6)
+	@echo "$(YELLOW)Verificando compilación para Raspberry Pi Zero (ARMv6)...$(NC)"
+	@GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm6-test main.go; \
+	EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 0 ]; then \
+		echo "$(GREEN)✓ La compilación para Raspberry Pi Zero (ARMv6) es correcta$(NC)"; \
+		rm /tmp/shareiscare-arm6-test; \
+	else \
+		echo "$(RED)✗ Error en la compilación para Raspberry Pi Zero (ARMv6)$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)✓ Tests completados con éxito$(NC)"
@@ -104,13 +115,19 @@ build-mac:
 	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64$(NC)"
 
 build-raspberrypi:
-	@echo "$(YELLOW)Compilando para Raspberry Pi...$(NC)"
+	@echo "$(YELLOW)Compilando para Raspberry Pi (ARMv7)...$(NC)"
 	@mkdir -p $(BUILD_DIR)
-	@GOOS=linux GOARCH=arm GOARM=7 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm main.go
-	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-linux-arm$(NC)"
+	@GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-armv7 main.go
+	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-linux-armv7$(NC)"
+
+build-raspberrypi-zero:
+	@echo "$(YELLOW)Compilando para Raspberry Pi Zero (ARMv6)...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-armv6 main.go
+	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-linux-armv6$(NC)"
 
 # Compilar para todas las plataformas
-cross-build: build-linux build-windows build-mac build-raspberrypi
+cross-build: build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero
 	@echo "$(GREEN)✓ Compilación completada para todas las plataformas$(NC)"
 
 # Iniciar la aplicación en modo desarrollo
@@ -153,7 +170,8 @@ help:
 	@echo "  $(GREEN)make build-linux$(NC)  - Compilar para Linux"
 	@echo "  $(GREEN)make build-windows$(NC)- Compilar para Windows"
 	@echo "  $(GREEN)make build-mac$(NC)    - Compilar para macOS"
-	@echo "  $(GREEN)make build-raspberrypi$(NC) - Compilar para Raspberry Pi"
+	@echo "  $(GREEN)make build-raspberrypi$(NC) - Compilar para Raspberry Pi (ARMv7)"
+	@echo "  $(GREEN)make build-raspberrypi-zero$(NC) - Compilar para Raspberry Pi Zero (ARMv6)"
 	@echo "  $(GREEN)make release v=X.Y.Z$(NC) - Crear tag de versión y lanzar release"
 	@echo ""
 	@echo "Ejecuta 'make' o 'make help' para ver esta ayuda"

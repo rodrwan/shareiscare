@@ -1,0 +1,49 @@
+name: Raspberry Pi Compatibility
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Permitir ejecución manual desde la interfaz de GitHub
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for Raspberry Pi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+          check-latest: true
+
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+
+      - name: Generate templ code
+        run: templ generate
+
+      - name: Check Go environment
+        run: |
+          go version
+          go env
+
+      - name: Check Go packages
+        run: go list -m all
+
+      - name: Compile for Raspberry Pi (ARMv7)
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o /tmp/shareiscare-armv7 main.go
+
+      - name: Verify ARMv7 binary
+        run: file /tmp/shareiscare-armv7
+
+      - name: Compile for Raspberry Pi Zero (ARMv6)
+        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -o /tmp/shareiscare-armv6 main.go
+
+      - name: Verify ARMv6 binary
+        run: file /tmp/shareiscare-armv6 

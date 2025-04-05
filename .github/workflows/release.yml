@@ -31,18 +31,19 @@ jobs:
       - name: Run tests
         run: go test -v -short ./...
 
-      - name: Verify cross-compilation for Raspberry Pi
-        run: |
-          echo "Verificando compilación para Raspberry Pi..."
-          GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o /tmp/shareiscare-arm-test main.go
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "✓ La compilación para Raspberry Pi es correcta"
-            rm /tmp/shareiscare-arm-test
-          else
-            echo "✗ Error en la compilación para Raspberry Pi"
-            exit 1
-          fi
+      - name: Compile for Raspberry Pi (ARMv7)
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o /tmp/shareiscare-armv7 main.go
+
+      - name: Clean up Raspberry Pi test
+        if: success()
+        run: rm -f /tmp/shareiscare-armv7 && echo "✓ La compilación para Raspberry Pi (ARMv7) es correcta"
+
+      - name: Compile for Raspberry Pi Zero (ARMv6)
+        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -o /tmp/shareiscare-armv6 main.go
+
+      - name: Clean up Raspberry Pi Zero test
+        if: success()
+        run: rm -f /tmp/shareiscare-armv6 && echo "✓ La compilación para Raspberry Pi Zero (ARMv6) es correcta"
 
       - name: Get version from tag
         id: get_version
@@ -63,8 +64,11 @@ jobs:
       - name: Build for macOS
         run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
 
-      - name: Build for Raspberry Pi
-        run: GOOS=linux GOARCH=arm GOARM=7 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-arm main.go
+      - name: Build for Raspberry Pi (ARMv7)
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
+
+      - name: Build for Raspberry Pi Zero (ARMv6)
+        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv6 main.go
 
       - name: Create config.yaml
         run: |
@@ -92,8 +96,12 @@ jobs:
           zip -j shareiscare-darwin-amd64.zip shareiscare-darwin-amd64 shareiscare-darwin-amd64.yaml
 
           # Raspberry Pi package
-          cp config.yaml shareiscare-linux-arm.yaml
-          zip -j shareiscare-linux-arm.zip shareiscare-linux-arm shareiscare-linux-arm.yaml
+          cp config.yaml shareiscare-linux-armv7.yaml
+          zip -j shareiscare-linux-armv7.zip shareiscare-linux-armv7 shareiscare-linux-armv7.yaml
+
+          # Raspberry Pi Zero package
+          cp config.yaml shareiscare-linux-armv6.yaml
+          zip -j shareiscare-linux-armv6.zip shareiscare-linux-armv6 shareiscare-linux-armv6.yaml
 
       - name: Create release
         id: create_release
@@ -108,4 +116,5 @@ jobs:
             ${{ env.BUILD_DIR }}/shareiscare-linux-amd64.zip
             ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.zip
             ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64.zip
-            ${{ env.BUILD_DIR }}/shareiscare-linux-arm.zip
+            ${{ env.BUILD_DIR }}/shareiscare-linux-armv7.zip
+            ${{ env.BUILD_DIR }}/shareiscare-linux-armv6.zip

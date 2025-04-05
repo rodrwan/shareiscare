@@ -2,6 +2,22 @@
 
 Este documento proporciona instrucciones para instalar y ejecutar ShareIsCare en dispositivos Raspberry Pi.
 
+## Modelos compatibles
+
+ShareIsCare ofrece binarios compilados para diferentes arquitecturas ARM:
+
+- **ARMv7 (shareiscare-linux-armv7)**:
+  - Raspberry Pi 2
+  - Raspberry Pi 3
+  - Raspberry Pi 4
+  - Raspberry Pi 400
+
+- **ARMv6 (shareiscare-linux-armv6)**:
+  - Raspberry Pi 1 (todas las versiones)
+  - Raspberry Pi Zero
+  - Raspberry Pi Zero W/WH
+  - Raspberry Pi Zero 2 W
+
 ## Requisitos
 
 - Raspberry Pi (cualquier modelo con Raspberry Pi OS / Raspbian)
@@ -12,24 +28,31 @@ Este documento proporciona instrucciones para instalar y ejecutar ShareIsCare en
 
 ### Método 1: Descarga directa desde GitHub
 
-1. Descarga la última versión para ARM desde la [página de releases](https://github.com/rodrwan/shareiscare/releases)
+1. Descarga la última versión para tu modelo desde la [página de releases](https://github.com/rodrwan/shareiscare/releases)
+   
+   Para Raspberry Pi 2, 3, 4, 400:
    ```bash
-   wget https://github.com/rodrwan/shareiscare/releases/latest/download/shareiscare-linux-arm.zip
+   wget https://github.com/rodrwan/shareiscare/releases/latest/download/shareiscare-linux-armv7.zip
+   ```
+   
+   Para Raspberry Pi 1, Zero, Zero W:
+   ```bash
+   wget https://github.com/rodrwan/shareiscare/releases/latest/download/shareiscare-linux-armv6.zip
    ```
 
 2. Descomprime el archivo:
    ```bash
-   unzip shareiscare-linux-arm.zip
+   unzip shareiscare-linux-armv*.zip
    ```
 
 3. Haz que el binario sea ejecutable:
    ```bash
-   chmod +x shareiscare-linux-arm
+   chmod +x shareiscare-linux-armv*
    ```
 
 4. Opcional - Mueve el binario a un directorio en el PATH:
    ```bash
-   sudo mv shareiscare-linux-arm /usr/local/bin/shareiscare
+   sudo mv shareiscare-linux-armv* /usr/local/bin/shareiscare
    ```
 
 ### Método 2: Compilar desde el código fuente
@@ -54,11 +77,18 @@ Si prefieres compilar desde el código fuente:
    ```
 
 4. Compila el proyecto:
+   
+   Para Raspberry Pi 2, 3, 4, 400:
    ```bash
    make build-raspberrypi
    ```
+   
+   Para Raspberry Pi 1, Zero, Zero W:
+   ```bash
+   make build-raspberrypi-zero
+   ```
 
-   El binario estará disponible en `./bin/shareiscare-linux-arm`
+   El binario estará disponible en `./bin/shareiscare-linux-armv7` o `./bin/shareiscare-linux-armv6` respectivamente.
 
 ## Configuración
 
@@ -149,4 +179,6 @@ Para que ShareIsCare se inicie automáticamente al arrancar la Raspberry Pi:
 - **Logs del servicio**: Si estás ejecutando como servicio, puedes ver los logs con:
   ```bash
   sudo journalctl -u shareiscare
-  ``` 
+  ```
+
+- **Error "Exec format error"**: Significa que estás usando el binario incorrecto para tu modelo de Raspberry Pi. Verifica qué modelo tienes y usa el binario apropiado (ARMv6 o ARMv7). 

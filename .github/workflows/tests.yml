@@ -29,14 +29,10 @@ jobs:
       - name: Run tests
         run: go test -v -short ./...
 
-      - name: Verify cross-compilation for Raspberry Pi
-        run: |
-          echo "Verificando compilación para Raspberry Pi..."
-          GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o /tmp/shareiscare-arm-test main.go
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "✓ La compilación para Raspberry Pi es correcta"
-            rm /tmp/shareiscare-arm-test
-          else
-            echo "✗ Error en la compilación para Raspberry Pi"
-            exit 1
+      # Verificación de Raspberry Pi en pasos separados para evitar problemas de sintaxis
+      - name: Compile for Raspberry Pi
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -o /tmp/shareiscare-arm-test main.go
+
+      - name: Clean up
+        if: success()
+        run: rm -f /tmp/shareiscare-arm-test && echo "✓ La compilación para Raspberry Pi es correcta"
