@@ -14,6 +14,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Version es la versión del programa, que se inyecta durante la compilación
+var Version = "dev"
+
 // Config estructura para la configuración del servidor
 type Config struct {
 	Port    int    `yaml:"port"`
@@ -71,11 +74,12 @@ func SaveConfig(config *Config, filename string) error {
 
 // PrintHelp muestra la ayuda del programa
 func PrintHelp() {
-	fmt.Println("ShareIsCare - Servidor de archivos simple")
+	fmt.Printf("ShareIsCare v%s - Servidor de archivos simple\n", Version)
 	fmt.Println("\nUso:")
 	fmt.Println("  shareiscare                       Inicia el servidor")
 	fmt.Println("  shareiscare init [ruta]           Genera archivo de configuración base")
 	fmt.Println("  shareiscare help                  Muestra esta ayuda")
+	fmt.Println("  shareiscare version               Muestra la versión del programa")
 	fmt.Println("\nEjemplos:")
 	fmt.Println("  shareiscare                       Inicia el servidor con config.yaml")
 	fmt.Println("  shareiscare init                  Genera config.yaml en el directorio actual")
@@ -307,7 +311,7 @@ func RunServer(config *Config) {
 
 	// Iniciar el servidor
 	addr := fmt.Sprintf(":%d", config.Port)
-	log.Printf("Servidor iniciado en http://localhost%s", addr)
+	log.Printf("ShareIsCare v%s iniciado en http://localhost%s", Version, addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
@@ -347,6 +351,11 @@ func main() {
 		case "help", "-h", "--help":
 			// Comando de ayuda
 			PrintHelp()
+			return
+
+		case "version", "-v", "--version":
+			// Comando para mostrar la versión del programa
+			fmt.Printf("ShareIsCare v%s\n", Version)
 			return
 
 		default:

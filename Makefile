@@ -22,7 +22,7 @@ else
     OS = windows
 endif
 
-.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac
+.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac release
 
 all: help
 
@@ -96,6 +96,18 @@ init-config:
 	@$(GO) run main.go init
 	@echo "$(GREEN)✓ Archivo de configuración generado$(NC)"
 
+# Crear tag y lanzar release
+release:
+	@if [ -z "$(v)" ]; then \
+		echo "$(RED)Error: Debes especificar una versión. Ejemplo: make release v=1.0.0$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Creando tag v$(v)...$(NC)"
+	@git tag -a v$(v) -m "Version $(v)"
+	@git push origin v$(v)
+	@echo "$(GREEN)✓ Tag v$(v) creado y enviado a GitHub$(NC)"
+	@echo "$(YELLOW)GitHub Actions debería estar creando el release automáticamente...$(NC)"
+
 # Mostrar ayuda
 help:
 	@echo "$(YELLOW)ShareIsCare - Comandos disponibles:$(NC)"
@@ -112,5 +124,6 @@ help:
 	@echo "  $(GREEN)make build-linux$(NC)  - Compilar para Linux"
 	@echo "  $(GREEN)make build-windows$(NC)- Compilar para Windows"
 	@echo "  $(GREEN)make build-mac$(NC)    - Compilar para macOS"
+	@echo "  $(GREEN)make release v=X.Y.Z$(NC) - Crear tag de versión y lanzar release"
 	@echo ""
 	@echo "Ejecuta 'make' o 'make help' para ver esta ayuda"

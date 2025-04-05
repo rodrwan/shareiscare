@@ -114,6 +114,24 @@ make cross-build
 # Los binarios estarán disponibles en la carpeta ./build/
 ```
 
+## Creación de Releases
+
+El proyecto está configurado para generar releases automáticos en GitHub cuando se crean tags de versión. Para crear un nuevo release:
+
+```bash
+# Crear un nuevo tag y release
+make release v=1.0.0  # Reemplaza 1.0.0 con el número de versión deseado
+```
+
+Este comando:
+1. Crea un tag Git con el formato `v1.0.0`
+2. Empuja el tag a GitHub
+3. Activa el flujo de trabajo de GitHub Actions
+4. Compila automáticamente los binarios para todas las plataformas
+5. Crea un release en GitHub con los binarios adjuntos
+
+Los releases quedarán disponibles en la [página de releases](https://github.com/rodrwan/shareiscare/releases) del repositorio.
+
 ## Arquitectura
 
 El proyecto utiliza:

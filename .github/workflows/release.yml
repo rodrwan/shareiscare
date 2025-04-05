@@ -1,0 +1,87 @@
+name: Release ShareIsCare
+
+on:
+  push:
+    tags:
+      - 'v*' # Activa el flujo cuando se crea un tag que comienza con 'v'
+
+permissions:
+  contents: write # Necesario para crear releases
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+          check-latest: true
+
+      - name: Install templ
+        run: go install github.com/a-h/templ/cmd/templ@latest
+
+      - name: Generate templ code
+        run: templ generate
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Set build directory
+        run: echo "BUILD_DIR=./build" >> $GITHUB_ENV
+
+      - name: Create build directory
+        run: mkdir -p $BUILD_DIR
+
+      - name: Build for Linux
+        run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-amd64 main.go
+
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.exe main.go
+
+      - name: Build for macOS
+        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
+
+      - name: Create config.yaml
+        run: |
+          cat > ${{ env.BUILD_DIR }}/config.yaml << EOL
+          # Configuración de ShareIsCare
+          port: 8080        # Puerto en el que se ejecutará el servidor
+          root_dir: "."     # Directorio raíz para servir archivos (ruta relativa o absoluta)
+          title: "ShareIsCare - Comparte tus archivos"  # Título para la interfaz web
+          EOL
+
+      - name: Zip binaries
+        run: |
+          cd ${{ env.BUILD_DIR }}
+
+          # Linux package
+          cp config.yaml shareiscare-linux-amd64.yaml
+          zip -j shareiscare-linux-amd64.zip shareiscare-linux-amd64 shareiscare-linux-amd64.yaml
+
+          # Windows package
+          cp config.yaml shareiscare-windows-amd64.yaml
+          zip -j shareiscare-windows-amd64.zip shareiscare-windows-amd64.exe shareiscare-windows-amd64.yaml
+
+          # macOS package
+          cp config.yaml shareiscare-darwin-amd64.yaml
+          zip -j shareiscare-darwin-amd64.zip shareiscare-darwin-amd64 shareiscare-darwin-amd64.yaml
+
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ShareIsCare ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ${{ env.BUILD_DIR }}/shareiscare-linux-amd64.zip
+            ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.zip
+            ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64.zip
