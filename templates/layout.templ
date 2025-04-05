@@ -1,0 +1,96 @@
+package templates
+
+// Layout es el componente base para todas las páginas
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="es" class="h-full">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>{ title }</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+		<script>
+			tailwind.config = {
+				theme: {
+					extend: {
+						colors: {
+							primary: {
+								50: '#f0f9ff',
+								100: '#e0f2fe',
+								200: '#bae6fd',
+								300: '#7dd3fc',
+								400: '#38bdf8',
+								500: '#0ea5e9',
+								600: '#0284c7',
+								700: '#0369a1',
+								800: '#075985',
+								900: '#0c4a6e',
+							}
+						}
+					}
+				}
+			}
+		</script>
+		<style>
+			body {
+				background-image: linear-gradient(to bottom right, rgb(249, 250, 251), rgb(243, 244, 246));
+				background-attachment: fixed;
+				min-height: 100vh;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-image: linear-gradient(to bottom right, rgb(15, 23, 42), rgb(15, 23, 42));
+					background-attachment: fixed;
+				}
+			}
+		</style>
+	</head>
+	<body class="h-full antialiased text-slate-500 dark:text-slate-400">
+		<div class="min-h-full flex flex-col">
+			<header class="shadow-sm sticky top-0 z-10 backdrop-blur bg-white/95 dark:bg-slate-900/95 transition-colors">
+				<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+					<div class="flex h-16 items-center justify-between">
+						<div class="flex items-center">
+							<a href="/" class="flex items-center space-x-2">
+								<div class="bg-gradient-to-r from-primary-600 to-indigo-600 text-white p-2 rounded-md">
+									<i class="fas fa-share-nodes"></i>
+								</div>
+								<span class="text-xl font-bold text-gray-900 dark:text-white">ShareIsCare</span>
+							</a>
+						</div>
+						<div>
+							<a href="/upload" class="group inline-flex items-center rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all duration-200 hover:scale-105">
+								<i class="fas fa-upload mr-2 group-hover:animate-pulse"></i>
+								Subir
+							</a>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			<main class="flex-grow">
+				<div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+					<div class="px-4 sm:px-0">
+						<div class="overflow-hidden rounded-xl bg-white shadow dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-800">
+							<div class="p-6">
+								{ children... }
+							</div>
+						</div>
+					</div>
+				</div>
+			</main>
+
+			<footer class="py-4 bg-transparent">
+				<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+					<p class="text-center text-sm text-gray-500 dark:text-slate-500">
+						ShareIsCare — Compartir archivos nunca fue tan fácil
+					</p>
+				</div>
+			</footer>
+		</div>
+	</body>
+	</html>
+}

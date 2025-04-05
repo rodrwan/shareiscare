@@ -1,0 +1,4 @@
+# Configuración de ShareIsCare
+port: 8080
+root_dir: .
+title: ShareIsCare

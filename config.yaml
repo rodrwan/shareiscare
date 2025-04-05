@@ -1,0 +1,4 @@
+# Configuración de ShareIsCare
+port: 8080        # Puerto en el que se ejecutará el servidor
+root_dir: "."     # Directorio raíz para servir archivos (ruta relativa o absoluta)
+title: "ShareIsCare - Comparte tus archivos"  # Título para la interfaz web 
