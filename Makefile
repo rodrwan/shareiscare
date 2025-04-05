@@ -61,7 +61,9 @@ test:
 	@$(GO) test -v ./... -short
 	@# Verificar compilación para Raspberry Pi directamente
 	@echo "$(YELLOW)Verificando compilación para Raspberry Pi...$(NC)"
-	@if GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm-test main.go; then \
+	@GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm-test main.go; \
+	EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 0 ]; then \
 		echo "$(GREEN)✓ La compilación para Raspberry Pi es correcta$(NC)"; \
 		rm /tmp/shareiscare-arm-test; \
 	else \
