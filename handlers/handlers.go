@@ -451,7 +451,25 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 			data.Message = "No se pudo procesar ningún archivo"
 		}
 
-		// Renderizar la plantilla con el resultado
-		templ.Handler(templates.Upload(data)).ServeHTTP(w, r)
+		// Obtener el nombre de usuario
+		username := ""
+		sessionCookie, _ := r.Cookie("session")
+		parts := strings.Split(sessionCookie.Value, ":")
+		if len(parts) >= 1 {
+			username = parts[0]
+		}
+
+		layoutData := templates.LayoutData{
+			Title:      config.Title + " - Subir archivos",
+			IsLoggedIn: true,
+			Username:   username,
+		}
+
+		// Renderizar la plantilla con el layout
+		component := templates.Upload(data)
+		ctx := r.Context()
+		handler := templates.LayoutWithData(layoutData)
+
+		templ.Handler(handler).ServeHTTP(w, r.WithContext(templ.WithChildren(ctx, component)))
 	}
 }
