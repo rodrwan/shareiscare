@@ -22,7 +22,7 @@ else
     OS = windows
 endif
 
-.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac release
+.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi release test
 
 all: help
 
@@ -49,6 +49,26 @@ clean:
 run: generate
 	@echo "$(YELLOW)Ejecutando $(BINARY_NAME)...$(NC)"
 	@$(GO) run main.go
+
+# Ejecutar los tests unitarios
+test:
+	@echo "$(YELLOW)Ejecutando tests unitarios...$(NC)"
+	@# Limpieza de archivos temporales
+	@if [ -f config.yaml.bak ]; then \
+		mv config.yaml.bak config.yaml; \
+	fi
+	@# Ejecutar tests (excluyendo el test de compilación cruzada)
+	@$(GO) test -v ./... -short
+	@# Verificar compilación para Raspberry Pi directamente
+	@echo "$(YELLOW)Verificando compilación para Raspberry Pi...$(NC)"
+	@if GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm-test main.go; then \
+		echo "$(GREEN)✓ La compilación para Raspberry Pi es correcta$(NC)"; \
+		rm /tmp/shareiscare-arm-test; \
+	else \
+		echo "$(RED)✗ Error en la compilación para Raspberry Pi$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✓ Tests completados con éxito$(NC)"
 
 # Actualizar dependencias
 deps:
@@ -81,8 +101,14 @@ build-mac:
 	@GOOS=darwin GOARCH=amd64 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 main.go
 	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64$(NC)"
 
+build-raspberrypi:
+	@echo "$(YELLOW)Compilando para Raspberry Pi...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@GOOS=linux GOARCH=arm GOARM=7 $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm main.go
+	@echo "$(GREEN)✓ Binario compilado en $(BUILD_DIR)/$(BINARY_NAME)-linux-arm$(NC)"
+
 # Compilar para todas las plataformas
-cross-build: build-linux build-windows build-mac
+cross-build: build-linux build-windows build-mac build-raspberrypi
 	@echo "$(GREEN)✓ Compilación completada para todas las plataformas$(NC)"
 
 # Iniciar la aplicación en modo desarrollo
@@ -115,15 +141,17 @@ help:
 	@echo "  $(GREEN)make build$(NC)        - Compilar el binario"
 	@echo "  $(GREEN)make run$(NC)          - Ejecutar la aplicación"
 	@echo "  $(GREEN)make dev$(NC)          - Iniciar en modo desarrollo"
+	@echo "  $(GREEN)make test$(NC)         - Ejecutar los tests unitarios"
 	@echo "  $(GREEN)make generate$(NC)     - Generar código Go a partir de las plantillas templ"
 	@echo "  $(GREEN)make clean$(NC)        - Limpiar archivos generados"
 	@echo "  $(GREEN)make deps$(NC)         - Actualizar dependencias"
 	@echo "  $(GREEN)make install$(NC)      - Instalar herramientas necesarias"
 	@echo "  $(GREEN)make init-config$(NC)  - Generar archivo de configuración por defecto"
-	@echo "  $(GREEN)make cross-build$(NC)  - Compilar para Linux, Windows y macOS"
+	@echo "  $(GREEN)make cross-build$(NC)  - Compilar para Linux, Windows, macOS y Raspberry Pi"
 	@echo "  $(GREEN)make build-linux$(NC)  - Compilar para Linux"
 	@echo "  $(GREEN)make build-windows$(NC)- Compilar para Windows"
 	@echo "  $(GREEN)make build-mac$(NC)    - Compilar para macOS"
+	@echo "  $(GREEN)make build-raspberrypi$(NC) - Compilar para Raspberry Pi"
 	@echo "  $(GREEN)make release v=X.Y.Z$(NC) - Crear tag de versión y lanzar release"
 	@echo ""
 	@echo "Ejecuta 'make' o 'make help' para ver esta ayuda"
