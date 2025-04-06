@@ -47,13 +47,31 @@ jobs:
         if: success()
         run: rm -f /tmp/shareiscare-armv6 && echo "✓ La compilación para Raspberry Pi Zero (ARMv6) es correcta"
 
-      - name: Generate version number
+      - name: Generate SemVer version number
         id: generate_version
         run: |
-          # Formato: v[año][mes][día].[hora][minuto]-[hash corto]
-          VERSION="v$(date +'%Y%m%d.%H%M')-$(git rev-parse --short HEAD)"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Versión generada: $VERSION"
+          # Obtener el último tag
+          git fetch --tags
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+          
+          # Si no hay tags previos, empezar con v0.1.0
+          if [ -z "$LATEST_TAG" ]; then
+            NEXT_VERSION="v0.1.0"
+          else
+            # Extraer major, minor y patch del último tag
+            MAJOR=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\1/')
+            MINOR=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\2/')
+            PATCH=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\3/')
+            
+            # Incrementar el número de patch
+            PATCH=$((PATCH + 1))
+            
+            # Construir la nueva versión
+            NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
+          fi
+          
+          echo "VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "Versión generada: $NEXT_VERSION"
 
       - name: Create Git Tag
         run: |
