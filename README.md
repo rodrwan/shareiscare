@@ -136,14 +136,15 @@ El proyecto está configurado para generar releases automáticos en GitHub en do
 
 Cada vez que se fusiona un Pull Request en la rama main, se activa un flujo de trabajo que:
 
-1. Genera automáticamente un número de versión basado en la fecha y el hash del commit
-2. Crea un tag de Git con ese número de versión
-3. Compila binarios para todas las plataformas soportadas
-4. Crea un release en GitHub con los binarios adjuntos
+1. Obtiene el último número de versión de los tags existentes (formato SemVer: v<major>.<minor>.<patch>)
+2. Incrementa automáticamente el número de patch
+3. Crea un tag de Git con ese número de versión
+4. Compila binarios para todas las plataformas soportadas
+5. Crea un release en GitHub con los binarios adjuntos
 
 Este es el método recomendado para crear nuevos releases, ya que se integra con el flujo de desarrollo basado en Pull Requests.
 
-### 2. Manualmente mediante tags (método antiguo)
+### 2. Manualmente mediante tags (método alternativo)
 
 También se puede crear un release manualmente:
 
@@ -151,6 +152,8 @@ También se puede crear un release manualmente:
 # Crear un nuevo tag y release
 make release v=1.0.0  # Reemplazar 1.0.0 con el número de versión deseado
 ```
+
+Asegúrate de seguir el formato SemVer (v<major>.<minor>.<patch>) para mantener la consistencia.
 
 Los releases estarán disponibles en la [página de releases](https://github.com/rodrwan/shareiscare/releases) del repositorio.
 
