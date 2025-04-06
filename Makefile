@@ -141,7 +141,7 @@ init-config:
 	@$(GO) run main.go init
 	@echo "$(GREEN)✓ Configuration file generated$(NC)"
 
-# Create tag and release
+# Create tag and release manually (aunque ahora los releases se generan automáticamente)
 release:
 	@if [ -z "$(v)" ]; then \
 		echo "$(RED)Error: You must specify a version. Example: make release v=1.0.0$(NC)"; \
@@ -152,6 +152,20 @@ release:
 	@git push origin v$(v)
 	@echo "$(GREEN)✓ Tag v$(v) created and pushed to GitHub$(NC)"
 	@echo "$(YELLOW)GitHub Actions should be creating the release automatically...$(NC)"
+
+# Merge a PR para crear un release automáticamente
+merge-and-release:
+	@if [ -z "$(pr)" ]; then \
+		echo "$(RED)Error: You must specify a PR number. Example: make merge-and-release pr=123$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Merging PR #$(pr) into main branch...$(NC)"
+	@git checkout main
+	@git pull
+	@git merge --no-ff -m "Merge PR #$(pr)" origin/PR-$(pr)
+	@git push origin main
+	@echo "$(GREEN)✓ PR #$(pr) merged into main$(NC)"
+	@echo "$(YELLOW)El proceso de CI/CD creará un release automáticamente$(NC)"
 
 # Show help
 help:
@@ -172,6 +186,7 @@ help:
 	@echo "  $(GREEN)make build-mac$(NC)    - Compile for macOS"
 	@echo "  $(GREEN)make build-raspberrypi$(NC) - Compile for Raspberry Pi (ARMv7)"
 	@echo "  $(GREEN)make build-raspberrypi-zero$(NC) - Compile for Raspberry Pi Zero (ARMv6)"
-	@echo "  $(GREEN)make release v=X.Y.Z$(NC) - Create version tag and launch release"
+	@echo "  $(GREEN)make release v=X.Y.Z$(NC) - Crear tag y release manual (método antiguo)"
+	@echo "  $(GREEN)make merge-and-release pr=N$(NC) - Mergear PR y generar release automático"
 	@echo ""
 	@echo "Run 'make' or 'make help' to see this help"
