@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"archive/zip"
 	"fmt"
 	"io"
 	"log"
@@ -149,10 +150,18 @@ func Index(config *config.Config) http.HandlerFunc {
 			}
 		}
 
+		// Create breadcrumbs for navigation
+		var breadcrumbs []templates.Breadcrumb
+		breadcrumbs = append(breadcrumbs, templates.Breadcrumb{
+			Name: "Home",
+			Path: "",
+		})
+
 		data := templates.IndexData{
-			Title:     config.Title,
-			Directory: config.RootDir,
-			Files:     fileInfos,
+			Title:       config.Title,
+			Directory:   "",
+			Files:       fileInfos,
+			Breadcrumbs: breadcrumbs,
 		}
 
 		layoutData := templates.LayoutData{
@@ -198,18 +207,68 @@ func Download(config *config.Config) http.HandlerFunc {
 			return
 		}
 
-		// Check if the file exists and is not a directory
+		// Check if the file exists
 		fileInfo, err := os.Stat(fullPath)
 		if err != nil {
 			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
+
+		// If it's a directory, create a zip file
 		if fileInfo.IsDir() {
-			http.Error(w, "Cannot download a directory", http.StatusBadRequest)
+			// Set headers for zip download
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", filepath.Base(filename)))
+			w.Header().Set("Content-Type", "application/zip")
+
+			// Create a zip writer
+			zipWriter := zip.NewWriter(w)
+			defer zipWriter.Close()
+
+			// Walk through the directory and add files to the zip
+			err = filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				// Skip directories
+				if info.IsDir() {
+					return nil
+				}
+
+				// Create a relative path for the file in the zip
+				relPath, err := filepath.Rel(fullPath, path)
+				if err != nil {
+					return err
+				}
+
+				// Create a new file in the zip
+				zipFile, err := zipWriter.Create(relPath)
+				if err != nil {
+					return err
+				}
+
+				// Open the file
+				file, err := os.Open(path)
+				if err != nil {
+					return err
+				}
+				defer file.Close()
+
+				// Copy the file content to the zip
+				_, err = io.Copy(zipFile, file)
+				return err
+			})
+
+			if err != nil {
+				log.Printf("Error creating zip file: %v", err)
+				http.Error(w, "Error creating zip file", http.StatusInternalServerError)
+				return
+			}
+
 			return
 		}
 
-		// Open the file
+		// For regular files, serve them directly
 		file, err := os.Open(fullPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -467,6 +526,157 @@ func UploadPost(config *config.Config) http.HandlerFunc {
 
 		// Render the template with the layout
 		component := templates.Upload(data)
+		ctx := r.Context()
+		handler := templates.LayoutWithData(layoutData)
+
+		templ.Handler(handler).ServeHTTP(w, r.WithContext(templ.WithChildren(ctx, component)))
+	}
+}
+
+// Browse handles directory navigation
+func Browse(config *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extract the path from the URL
+		path := strings.TrimPrefix(r.URL.Path, "/browse/")
+		if path == "" {
+			// If no path is specified, redirect to the root
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		// Validate that the path is within the configured directory
+		fullPath := filepath.Join(config.RootDir, path)
+		absRoot, err := filepath.Abs(config.RootDir)
+		if err != nil {
+			http.Error(w, "Configuration error", http.StatusInternalServerError)
+			return
+		}
+		absPath, err := filepath.Abs(fullPath)
+		if err != nil {
+			http.Error(w, "Invalid path", http.StatusBadRequest)
+			return
+		}
+
+		rel, err := filepath.Rel(absRoot, absPath)
+		if err != nil || strings.HasPrefix(rel, "..") || strings.Contains(rel, "/../") {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+
+		// Check if the path exists and is a directory
+		fileInfo, err := os.Stat(fullPath)
+		if err != nil {
+			http.Error(w, "Path not found", http.StatusNotFound)
+			return
+		}
+		if !fileInfo.IsDir() {
+			// If it's a file, redirect to download
+			http.Redirect(w, r, "/download?filename="+path, http.StatusSeeOther)
+			return
+		}
+
+		// List files in the directory
+		files, err := os.ReadDir(fullPath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// List of files to exclude
+		excludeFiles := map[string]bool{
+			"config.yaml":     true,
+			"shareiscare":     true,
+			"shareiscare.exe": true,
+		}
+
+		var fileInfos []templates.FileInfo
+		for _, file := range files {
+			// Filter ShareIsCare system files
+			if excludeFiles[file.Name()] {
+				continue
+			}
+
+			filePath := filepath.Join(fullPath, file.Name())
+
+			// Get file information
+			info, err := os.Stat(filePath)
+			if err != nil {
+				continue
+			}
+
+			// Format size
+			size := ""
+			if !info.IsDir() {
+				bytes := info.Size()
+				if bytes < 1024 {
+					size = fmt.Sprintf("%d B", bytes)
+				} else if bytes < 1024*1024 {
+					size = fmt.Sprintf("%.1f KB", float64(bytes)/1024)
+				} else {
+					size = fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
+				}
+			} else {
+				size = "directory"
+			}
+
+			// Create relative path for links
+			relPath := filepath.Join(path, file.Name())
+
+			fileInfos = append(fileInfos, templates.FileInfo{
+				Name:  file.Name(),
+				Path:  relPath,
+				Size:  size,
+				IsDir: info.IsDir(),
+			})
+		}
+
+		// Check if the user is authenticated
+		isLoggedIn := isAuthenticated(r, config)
+
+		// Get the username if authenticated
+		username := ""
+		if isLoggedIn {
+			sessionCookie, _ := r.Cookie("session")
+			parts := strings.Split(sessionCookie.Value, ":")
+			if len(parts) >= 1 {
+				username = parts[0]
+			}
+		}
+
+		// Create breadcrumbs for navigation
+		var breadcrumbs []templates.Breadcrumb
+		breadcrumbs = append(breadcrumbs, templates.Breadcrumb{
+			Name: "Home",
+			Path: "",
+		})
+
+		if path != "" {
+			parts := strings.Split(path, "/")
+			currentPath := ""
+			for _, part := range parts {
+				currentPath = filepath.Join(currentPath, part)
+				breadcrumbs = append(breadcrumbs, templates.Breadcrumb{
+					Name: part,
+					Path: currentPath,
+				})
+			}
+		}
+
+		data := templates.IndexData{
+			Title:       config.Title,
+			Directory:   path,
+			Files:       fileInfos,
+			Breadcrumbs: breadcrumbs,
+		}
+
+		layoutData := templates.LayoutData{
+			Title:      config.Title + " - Browse",
+			IsLoggedIn: isLoggedIn,
+			Username:   username,
+		}
+
+		// Render the template with the layout
+		component := templates.Index(data)
 		ctx := r.Context()
 		handler := templates.LayoutWithData(layoutData)
 

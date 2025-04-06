@@ -32,6 +32,8 @@ func PrintHelp() {
 func RunServer(config *config.Config) {
 	// Main handler route (file listing)
 	http.HandleFunc("GET /", handlers.Index(config))
+	// Route for browsing directories
+	http.HandleFunc("GET /browse/", handlers.Browse(config))
 	// Route for downloading files
 	http.HandleFunc("GET /download", handlers.Download(config))
 	// Login route (GET)
