@@ -46,6 +46,8 @@ func RunServer(config *config.Config) {
 	http.HandleFunc("GET /upload", handlers.RequireAuth(handlers.Upload(config), config))
 	// Route to process file uploads (POST) - protected
 	http.HandleFunc("POST /upload", handlers.RequireAuth(handlers.UploadPost(config), config))
+	// Route to delete files (POST) - protected and admin only
+	http.HandleFunc("POST /delete", handlers.RequireAuth(handlers.RequireAdmin(handlers.Delete(config), config), config))
 
 	// Start the server
 	addr := fmt.Sprintf(":%d", config.Port)

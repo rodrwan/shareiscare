@@ -6,6 +6,7 @@ type FileInfo struct {
 	Path  string
 	Size  string
 	IsDir bool
+	IsAdmin bool
 }
 
 // Breadcrumb estructura para representar un elemento del breadcrumb

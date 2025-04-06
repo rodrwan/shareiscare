@@ -99,6 +99,17 @@ func Index(config *config.Config) http.HandlerFunc {
 			"shareiscare.exe": true,
 		}
 
+		// Check if the user is authenticated and is admin
+		isLoggedIn := isAuthenticated(r, config)
+		isAdmin := false
+		if isLoggedIn {
+			sessionCookie, _ := r.Cookie("session")
+			parts := strings.Split(sessionCookie.Value, ":")
+			if len(parts) >= 1 {
+				isAdmin = parts[0] == config.Username
+			}
+		}
+
 		var fileInfos []templates.FileInfo
 		for _, file := range files {
 			// Filter ShareIsCare system files
@@ -134,11 +145,12 @@ func Index(config *config.Config) http.HandlerFunc {
 				Path:  file.Name(),
 				Size:  size,
 				IsDir: info.IsDir(),
+				IsAdmin: isAdmin,
 			})
 		}
 
 		// Check if the user is authenticated
-		isLoggedIn := isAuthenticated(r, config)
+		isLoggedIn = isAuthenticated(r, config)
 
 		// Get the username if authenticated
 		username := ""
@@ -589,6 +601,17 @@ func Browse(config *config.Config) http.HandlerFunc {
 			"shareiscare.exe": true,
 		}
 
+		// Check if the user is authenticated and is admin
+		isLoggedIn := isAuthenticated(r, config)
+		isAdmin := false
+		if isLoggedIn {
+			sessionCookie, _ := r.Cookie("session")
+			parts := strings.Split(sessionCookie.Value, ":")
+			if len(parts) >= 1 {
+				isAdmin = parts[0] == config.Username
+			}
+		}
+
 		var fileInfos []templates.FileInfo
 		for _, file := range files {
 			// Filter ShareIsCare system files
@@ -627,11 +650,9 @@ func Browse(config *config.Config) http.HandlerFunc {
 				Path:  relPath,
 				Size:  size,
 				IsDir: info.IsDir(),
+				IsAdmin: isAdmin,
 			})
 		}
-
-		// Check if the user is authenticated
-		isLoggedIn := isAuthenticated(r, config)
 
 		// Get the username if authenticated
 		username := ""
@@ -681,5 +702,87 @@ func Browse(config *config.Config) http.HandlerFunc {
 		handler := templates.LayoutWithData(layoutData)
 
 		templ.Handler(handler).ServeHTTP(w, r.WithContext(templ.WithChildren(ctx, component)))
+	}
+}
+
+// requireAdmin is a middleware that checks if the user is an admin
+func RequireAdmin(next http.HandlerFunc, config *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sessionCookie, err := r.Cookie("session")
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		parts := strings.Split(sessionCookie.Value, ":")
+		if len(parts) < 1 {
+			http.Error(w, "Invalid session", http.StatusUnauthorized)
+			return
+		}
+
+		username := parts[0]
+		if username != config.Username {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+// Delete handles file deletion
+func Delete(config *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Error processing form", http.StatusBadRequest)
+			return
+		}
+
+		filename := r.FormValue("filename")
+		if filename == "" {
+			http.Error(w, "Filename is required", http.StatusBadRequest)
+			return
+		}
+
+		// Validate that the file is within the configured directory
+		fullPath := filepath.Join(config.RootDir, filename)
+		absRoot, err := filepath.Abs(config.RootDir)
+		if err != nil {
+			http.Error(w, "Configuration error", http.StatusInternalServerError)
+			return
+		}
+		absPath, err := filepath.Abs(fullPath)
+		if err != nil {
+			http.Error(w, "Invalid path", http.StatusBadRequest)
+			return
+		}
+
+		rel, err := filepath.Rel(absRoot, absPath)
+		if err != nil || strings.HasPrefix(rel, "..") || strings.Contains(rel, "/../") {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+
+		// Check if the file exists
+		if _, err := os.Stat(fullPath); err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
+
+		// Delete the file
+		err = os.Remove(fullPath)
+		if err != nil {
+			http.Error(w, "Error deleting file", http.StatusInternalServerError)
+			return
+		}
+
+		// Redirect back to the directory
+		dir := filepath.Dir(filename)
+		if dir == "." {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		} else {
+			http.Redirect(w, r, "/browse/"+dir, http.StatusSeeOther)
+		}
 	}
 }
