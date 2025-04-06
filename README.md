@@ -130,21 +130,29 @@ make cross-build
 
 ## Creating Releases
 
-The project is configured to generate automatic releases on GitHub when version tags are created. To create a new release:
+El proyecto está configurado para generar releases automáticos en GitHub en dos escenarios:
+
+### 1. Automáticamente al hacer merge a la rama main
+
+Cada vez que se fusiona un Pull Request en la rama main, se activa un flujo de trabajo que:
+
+1. Genera automáticamente un número de versión basado en la fecha y el hash del commit
+2. Crea un tag de Git con ese número de versión
+3. Compila binarios para todas las plataformas soportadas
+4. Crea un release en GitHub con los binarios adjuntos
+
+Este es el método recomendado para crear nuevos releases, ya que se integra con el flujo de desarrollo basado en Pull Requests.
+
+### 2. Manualmente mediante tags (método antiguo)
+
+También se puede crear un release manualmente:
 
 ```bash
-# Create a new tag and release
-make release v=1.0.0  # Replace 1.0.0 with the desired version number
+# Crear un nuevo tag y release
+make release v=1.0.0  # Reemplazar 1.0.0 con el número de versión deseado
 ```
 
-This command:
-1. Creates a Git tag with the format `v1.0.0`
-2. Pushes the tag to GitHub
-3. Triggers the GitHub Actions workflow
-4. Automatically builds binaries for all platforms
-5. Creates a GitHub release with the attached binaries
-
-The releases will be available on the repository's [releases page](https://github.com/rodrwan/shareiscare/releases).
+Los releases estarán disponibles en la [página de releases](https://github.com/rodrwan/shareiscare/releases) del repositorio.
 
 ## Architecture
 

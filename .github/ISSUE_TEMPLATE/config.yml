@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤔 Preguntas y Discusiones
+    url: https://github.com/rodrwan/shareiscare/discussions
+    about: Por favor usa el espacio de discusiones para preguntas generales, ideas o soporte
+  - name: 📖 Documentación
+    url: https://github.com/rodrwan/shareiscare#readme
+    about: Asegúrate de leer la documentación antes de crear un issue

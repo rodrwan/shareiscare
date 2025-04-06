@@ -2,8 +2,8 @@ name: Release ShareIsCare
 
 on:
   push:
-    tags:
-      - 'v*' # Activa el flujo cuando se crea un tag que comienza con 'v'
+    branches:
+      - main # Activa el flujo cuando se hace push a main
 
 permissions:
   contents: write # Necesario para crear releases
@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Necesario para obtener todos los tags y commits
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -45,9 +47,20 @@ jobs:
         if: success()
         run: rm -f /tmp/shareiscare-armv6 && echo "✓ La compilación para Raspberry Pi Zero (ARMv6) es correcta"
 
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Generate version number
+        id: generate_version
+        run: |
+          # Formato: v[año][mes][día].[hora][minuto]-[hash corto]
+          VERSION="v$(date +'%Y%m%d.%H%M')-$(git rev-parse --short HEAD)"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Versión generada: $VERSION"
+
+      - name: Create Git Tag
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git tag -a ${{ env.VERSION }} -m "Release automático ${{ env.VERSION }}"
+          git push origin ${{ env.VERSION }}
 
       - name: Set build directory
         run: echo "BUILD_DIR=./build" >> $GITHUB_ENV
