@@ -32,6 +32,8 @@ func PrintHelp() {
 func RunServer(config *config.Config) {
 	// Main handler route (file listing)
 	http.HandleFunc("GET /", handlers.Index(config))
+	// Route for browsing directories
+	http.HandleFunc("GET /browse/", handlers.Browse(config))
 	// Route for downloading files
 	http.HandleFunc("GET /download", handlers.Download(config))
 	// Login route (GET)
@@ -44,6 +46,8 @@ func RunServer(config *config.Config) {
 	http.HandleFunc("GET /upload", handlers.RequireAuth(handlers.Upload(config), config))
 	// Route to process file uploads (POST) - protected
 	http.HandleFunc("POST /upload", handlers.RequireAuth(handlers.UploadPost(config), config))
+	// Route to delete files (POST) - protected and admin only
+	http.HandleFunc("POST /delete", handlers.RequireAuth(handlers.RequireAdmin(handlers.Delete(config), config), config))
 
 	// Start the server
 	addr := fmt.Sprintf(":%d", config.Port)
