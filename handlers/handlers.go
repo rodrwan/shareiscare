@@ -84,6 +84,21 @@ func RequireAuth(next http.HandlerFunc, config *config.Config) http.HandlerFunc 
 	}
 }
 
+// getFileType determina el tipo de archivo basado en su extensión
+func getFileType(filename string) templates.FileType {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg":
+		return templates.FileTypeImage
+	case ".mp4", ".webm", ".avi", ".mov", ".mkv":
+		return templates.FileTypeVideo
+	case ".txt", ".md", ".json", ".xml", ".html", ".css", ".js", ".go", ".py", ".java", ".c", ".cpp", ".h", ".hpp":
+		return templates.FileTypeText
+	default:
+		return templates.FileTypeUnknown
+	}
+}
+
 func Index(config *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		files, err := os.ReadDir(config.RootDir)
@@ -140,12 +155,18 @@ func Index(config *config.Config) http.HandlerFunc {
 				size = "directory"
 			}
 
+			fileType := templates.FileTypeUnknown
+			if !info.IsDir() {
+				fileType = getFileType(file.Name())
+			}
+
 			fileInfos = append(fileInfos, templates.FileInfo{
-				Name:  file.Name(),
-				Path:  file.Name(),
-				Size:  size,
-				IsDir: info.IsDir(),
-				IsAdmin: isAdmin,
+				Name:     file.Name(),
+				Path:     file.Name(),
+				Size:     size,
+				IsDir:    info.IsDir(),
+				IsAdmin:  isAdmin,
+				FileType: fileType,
 			})
 		}
 
@@ -645,12 +666,18 @@ func Browse(config *config.Config) http.HandlerFunc {
 			// Create relative path for links
 			relPath := filepath.Join(path, file.Name())
 
+			fileType := templates.FileTypeUnknown
+			if !info.IsDir() {
+				fileType = getFileType(file.Name())
+			}
+
 			fileInfos = append(fileInfos, templates.FileInfo{
-				Name:  file.Name(),
-				Path:  relPath,
-				Size:  size,
-				IsDir: info.IsDir(),
-				IsAdmin: isAdmin,
+				Name:     file.Name(),
+				Path:     relPath,
+				Size:     size,
+				IsDir:    info.IsDir(),
+				IsAdmin:  isAdmin,
+				FileType: fileType,
 			})
 		}
 
@@ -784,5 +811,92 @@ func Delete(config *config.Config) http.HandlerFunc {
 		} else {
 			http.Redirect(w, r, "/browse/"+dir, http.StatusSeeOther)
 		}
+	}
+}
+
+// Preview handles file preview
+func Preview(config *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filename := r.URL.Query().Get("filename")
+		if filename == "" {
+			http.Error(w, "Filename is required", http.StatusBadRequest)
+			return
+		}
+
+		// Validate that the file is within the configured directory
+		fullPath := filepath.Join(config.RootDir, filename)
+		absRoot, err := filepath.Abs(config.RootDir)
+		if err != nil {
+			http.Error(w, "Configuration error", http.StatusInternalServerError)
+			return
+		}
+		absPath, err := filepath.Abs(fullPath)
+		if err != nil {
+			http.Error(w, "Invalid path", http.StatusBadRequest)
+			return
+		}
+
+		rel, err := filepath.Rel(absRoot, absPath)
+		if err != nil || strings.HasPrefix(rel, "..") || strings.Contains(rel, "/../") {
+			http.Error(w, "Access denied", http.StatusForbidden)
+			return
+		}
+
+		// Check if the file exists
+		fileInfo, err := os.Stat(fullPath)
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
+
+		// Check if it's a directory
+		if fileInfo.IsDir() {
+			http.Error(w, "Cannot preview directories", http.StatusBadRequest)
+			return
+		}
+
+		// Get file type
+		fileType := getFileType(filename)
+		if fileType == templates.FileTypeUnknown {
+			http.Error(w, "Unsupported file type for preview", http.StatusBadRequest)
+			return
+		}
+
+		// Set appropriate Content-Type header
+		switch fileType {
+		case templates.FileTypeImage:
+			ext := strings.ToLower(filepath.Ext(filename))
+			switch ext {
+			case ".jpg", ".jpeg":
+				w.Header().Set("Content-Type", "image/jpeg")
+			case ".png":
+				w.Header().Set("Content-Type", "image/png")
+			case ".gif":
+				w.Header().Set("Content-Type", "image/gif")
+			case ".webp":
+				w.Header().Set("Content-Type", "image/webp")
+			case ".svg":
+				w.Header().Set("Content-Type", "image/svg+xml")
+			case ".bmp":
+				w.Header().Set("Content-Type", "image/bmp")
+			}
+		case templates.FileTypeVideo:
+			ext := strings.ToLower(filepath.Ext(filename))
+			switch ext {
+			case ".mp4":
+				w.Header().Set("Content-Type", "video/mp4")
+			case ".webm":
+				w.Header().Set("Content-Type", "video/webm")
+			case ".avi":
+				w.Header().Set("Content-Type", "video/x-msvideo")
+			case ".mov":
+				w.Header().Set("Content-Type", "video/quicktime")
+			case ".mkv":
+				w.Header().Set("Content-Type", "video/x-matroska")
+			}
+		}
+
+		// Serve the file
+		http.ServeFile(w, r, fullPath)
 	}
 }

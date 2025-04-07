@@ -36,6 +36,8 @@ func RunServer(config *config.Config) {
 	http.HandleFunc("GET /browse/", handlers.Browse(config))
 	// Route for downloading files
 	http.HandleFunc("GET /download", handlers.Download(config))
+	// Route for previewing files
+	http.HandleFunc("GET /preview", handlers.Preview(config))
 	// Login route (GET)
 	http.HandleFunc("GET /login", handlers.Login(config))
 	// Login route (POST)
