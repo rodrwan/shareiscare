@@ -16,6 +16,7 @@ type Config struct {
 	Username  string `yaml:"username"`   // Username for authentication
 	Password  string `yaml:"password"`   // Password for authentication
 	SecretKey string `yaml:"secret_key"` // Secret key for signing sessions
+	Hostname  string `yaml:"hostname"`   // Domain for the server
 }
 
 // DefaultConfig returns a default configuration
@@ -27,6 +28,7 @@ func DefaultConfig() *Config {
 		Username:  "admin",             // Default username
 		Password:  "shareiscare",       // Default password
 		SecretKey: generateRandomKey(), // Secret key for sessions
+		Hostname:  "",                  // Default domain
 	}
 }
 
@@ -73,4 +75,13 @@ func SaveConfig(config *Config, filename string) error {
 	}
 
 	return nil
+}
+
+func SetHostname(hostname string) error {
+	config, err := LoadConfig()
+	if err != nil {
+		return fmt.Errorf("❌ Error cargando configuración: %v", err)
+	}
+	config.Hostname = hostname
+	return SaveConfig(config, "config.yaml")
 }

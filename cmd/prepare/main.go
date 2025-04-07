@@ -16,6 +16,29 @@ func main() {
 	goarch := runtime.GOARCH
 	fmt.Printf("🔍 Detectado: %s-%s\n", goos, goarch)
 
+	switch goos {
+	case "linux":
+		// If the cloudflared binary is already in the cloudflared directory, skip the download
+		if _, err := os.Stat("cloudflared/linux-amd64/cloudflared"); err == nil {
+			fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
+			return
+		}
+	case "darwin":
+		// If the cloudflared binary is already in the cloudflared directory, skip the download
+		if _, err := os.Stat("cloudflared/darwin-arm64/cloudflared"); err == nil {
+			fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
+			return
+		}
+	case "windows":
+		// If the cloudflared binary is already in the cloudflared directory, skip the download
+		if _, err := os.Stat("cloudflared/windows-amd64/cloudflared.exe"); err == nil {
+			fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
+			return
+		}
+	default:
+		panic("SO no soportado")
+	}
+
 	var url, outPath string
 	switch goos {
 	case "linux":

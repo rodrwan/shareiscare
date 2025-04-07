@@ -1,0 +1,6 @@
+tunnel: ""
+credentials-file: ""
+ingress:
+  - hostname: ""
+    service: ""
+  - service: http_status:404
