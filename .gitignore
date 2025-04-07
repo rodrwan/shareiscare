@@ -9,4 +9,4 @@
 bin/
 build/
 cloudflared/*
-!cloudflared/.gitkeep
+!cloudflared/keep
