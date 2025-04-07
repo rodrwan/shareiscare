@@ -184,6 +184,12 @@ RUN_TUNNEL:
 
 	log.Println("⚙️ provisioning hostname", hostname)
 
+	// Check if we're running in a test environment
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		log.Println("⚠️ Running in GitHub Actions environment, skipping cloudflared setup")
+		return
+	}
+
 	binPath, err := proxy.ExtractCloudflaredBinary(embeddedBinaries)
 	if err != nil {
 		log.Panicf("❌ Error extracting cloudflared: %v", err)
@@ -195,6 +201,7 @@ RUN_TUNNEL:
 		log.Panicf("❌ Error running cloudflared: %v", err)
 	}
 	defer os.Remove(tmpFile) // Clean up temporary file when done
+
 	// Run cloudflared with temporary configuration file
 	cmd := exec.Command(binPath,
 		"tunnel",
@@ -210,6 +217,7 @@ RUN_TUNNEL:
 
 	// Wait a moment to see if the tunnel establishes
 	time.Sleep(5 * time.Second)
+
 	ticker = time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
@@ -225,6 +233,7 @@ RUN_TUNNEL:
 			}
 		}
 	}
+
 RUN_SERVER:
 	// Check if the process is still running
 	if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
