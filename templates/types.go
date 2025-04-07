@@ -1,12 +1,23 @@
 package templates
 
+// FileType define los tipos de archivos soportados
+type FileType string
+
+const (
+	FileTypeUnknown FileType = "unknown"
+	FileTypeImage   FileType = "image"
+	FileTypeVideo   FileType = "video"
+	FileTypeText    FileType = "text"
+)
+
 // FileInfo contiene información sobre un archivo para mostrar en el listado
 type FileInfo struct {
-	Name  string
-	Path  string
-	Size  string
-	IsDir bool
-	IsAdmin bool
+	Name     string
+	Path     string
+	Size     string
+	IsDir    bool
+	IsAdmin  bool
+	FileType FileType
 }
 
 // Breadcrumb estructura para representar un elemento del breadcrumb

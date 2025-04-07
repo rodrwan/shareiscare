@@ -2,115 +2,152 @@ package templates
 
 // Index is the main page that displays the file list
 templ Index(data IndexData) {
-	<div x-data="{ view: 'grid' }">
-		<div class="flex items-center justify-between mb-8">
-			<div>
-				<h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-					Shared files
-				</h1>
-				<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-					Directory: <span class="font-medium text-gray-900 dark:text-white">{ data.Directory }</span>
-				</p>
-
-				<!-- Breadcrumbs -->
-				if len(data.Breadcrumbs) > 0 {
-					<nav class="mt-2 flex" aria-label="Breadcrumb">
-						<ol class="flex items-center space-x-2">
-							for i, breadcrumb := range data.Breadcrumbs {
-								if i > 0 {
-									<li>
-										<div class="flex items-center">
-											<svg class="h-5 w-5 flex-shrink-0 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-												<path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
-											</svg>
-										</div>
-									</li>
-								}
-								<li>
-									if i == len(data.Breadcrumbs) - 1 {
-										<span class="text-sm font-medium text-gray-500 dark:text-gray-400" aria-current="page">{ breadcrumb.Name }</span>
-									} else {
-										<a href={ templ.SafeURL("/browse/" + breadcrumb.Path) } class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">{ breadcrumb.Name }</a>
-									}
-								</li>
-							}
-						</ol>
-					</nav>
-				}
+	<div x-data="{ view: 'grid', previewFile: null }" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<!-- Header -->
+		<div class="mb-8">
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+						{ data.Title }
+					</h1>
+					if data.Directory != "" {
+						<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+							Current directory: { data.Directory }
+						</p>
+					}
+				</div>
+				<div class="flex items-center space-x-4">
+					<a
+						href="/upload"
+						class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+					>
+						<i class="fas fa-upload -ml-0.5 mr-1.5 h-5 w-5"></i> Upload files
+					</a>
+				</div>
 			</div>
 
-			<div class="rounded-md border border-gray-300 dark:border-gray-700 p-1 flex">
+			<!-- Breadcrumbs -->
+			if len(data.Breadcrumbs) > 0 {
+				<nav class="mt-4 flex" aria-label="Breadcrumb">
+					<ol role="list" class="flex items-center space-x-2">
+						for i, breadcrumb := range data.Breadcrumbs {
+							<li>
+								if i > 0 {
+									<div class="flex items-center">
+										<i class="fas fa-chevron-right h-4 w-4 text-gray-400 dark:text-gray-500"></i>
+										<span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+											{ breadcrumb.Name }
+										</span>
+									</div>
+								} else {
+									<a
+										href={ templ.SafeURL("/browse/" + breadcrumb.Path) }
+										class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+									>
+										{ breadcrumb.Name }
+									</a>
+								}
+							</li>
+						}
+					</ol>
+				</nav>
+			}
+		</div>
+
+		<!-- View toggle -->
+		<div class="mb-4 flex justify-end">
+			<div class="inline-flex rounded-md shadow-sm" role="group">
 				<button
+					type="button"
+					class="rounded-l-md bg-white dark:bg-slate-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-600 focus:z-10 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
 					@click="view = 'grid'"
-					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'grid'}"
-					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+					:class="{ 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400': view === 'grid' }"
 				>
-					<i class="fas fa-grip mr-1"></i> Grid
+					<i class="fas fa-th-large"></i>
 				</button>
 				<button
+					type="button"
+					class="rounded-r-md bg-white dark:bg-slate-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-slate-600 focus:z-10 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
 					@click="view = 'list'"
-					:class="{'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300': view === 'list'}"
-					class="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+					:class="{ 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400': view === 'list' }"
 				>
-					<i class="fas fa-list mr-1"></i> List
+					<i class="fas fa-list"></i>
 				</button>
 			</div>
 		</div>
 
 		<!-- Grid view -->
-		<div
-			x-show="view === 'grid'"
-			class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-		>
+		<div x-show="view === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 			for _, file := range data.Files {
-				<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:shadow-md transition-shadow">
-					<div class="p-4 sm:p-6">
+				<div class="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
+					<div class="p-4">
 						<div class="flex items-center">
 							if file.IsDir {
-								<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3 flex-shrink-0">
-									<i class="fas fa-folder text-amber-600 dark:text-amber-400 text-xl"></i>
+								<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-2 flex-shrink-0">
+									<i class="fas fa-folder text-amber-600 dark:text-amber-400"></i>
+								</div>
+							} else if file.FileType == FileTypeImage {
+								<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+									<img
+										src={ "/preview?filename=" + file.Path }
+										alt={ file.Name }
+										class="w-full h-full object-cover"
+									/>
+								</div>
+							} else if file.FileType == FileTypeVideo {
+								<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2 flex-shrink-0">
+									<i class="fas fa-video text-blue-600 dark:text-blue-400"></i>
 								</div>
 							} else {
-								<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-3 flex-shrink-0">
-									<i class="fas fa-file text-sky-600 dark:text-sky-400 text-xl"></i>
+								<div class="rounded-full bg-gray-100 dark:bg-gray-700 p-2 flex-shrink-0">
+									<i class="fas fa-file text-gray-600 dark:text-gray-400"></i>
 								</div>
 							}
-							<div class="ml-4 flex-1 min-w-0">
-								<h3 class="text-base font-medium text-gray-900 dark:text-white truncate">
+							<div class="ml-3">
+								<h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
 									{ file.Name }
 								</h3>
-								<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{ file.Size }</p>
+								<p class="text-sm text-gray-500 dark:text-gray-400">
+									{ file.Size }
+								</p>
 							</div>
 						</div>
-						<div class="mt-4 flex">
+						<div class="mt-4 flex space-x-2">
 							if file.IsDir {
 								<a
 									href={ templ.SafeURL("/browse/" + file.Path) }
-									class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center w-full transition-colors"
+									class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center flex-1 transition-colors"
 								>
 									<i class="fas fa-folder-open mr-2"></i> Open
 								</a>
 							} else {
-								<div class="flex space-x-2 w-full">
-									<a
-										href={ templ.SafeURL("/download?filename=" + file.Path) }
-										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center flex-1 transition-colors"
+								<a
+									href={ templ.SafeURL("/download?filename=" + file.Path) }
+									class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center flex-1 transition-colors"
+								>
+									<i class="fas fa-download mr-2"></i> Download
+								</a>
+								if file.FileType == FileTypeImage || file.FileType == FileTypeVideo {
+									<button
+										type="button"
+										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center transition-colors"
+										@click="previewFile = { name: file.Name, path: file.Path, type: parseInt(file.FileType) }"
 									>
-										<i class="fas fa-download mr-2"></i> Download
-									</a>
-									if file.IsAdmin {
-										<form method="post" action="/delete" class="flex-1">
-											<input type="hidden" name="filename" value={ file.Path } />
-											<button
-												type="submit"
-												class="w-full bg-red-600 hover:bg-red-700 border border-transparent rounded-md shadow-sm px-4 py-2 text-sm font-medium text-white flex items-center justify-center transition-colors"
-												onclick="return confirm('¿Estás seguro de que deseas eliminar este archivo?')"
-											>
-												<i class="fas fa-trash mr-2"></i> Delete
-											</button>
-										</form>
-									}
-								</div>
+										<i class="fas fa-eye mr-2"></i> Preview
+									</button>
+								}
+								if file.IsAdmin {
+									<form method="post" action="/delete" class="flex-1">
+										<input type="hidden" name="filename" value={ file.Path } />
+										<button
+											type="submit"
+											class="w-full bg-red-600 hover:bg-red-700 border border-transparent rounded-md shadow-sm px-4 py-2 text-sm font-medium text-white flex items-center justify-center transition-colors"
+											onclick="return confirm('¿Estás seguro de que deseas eliminar este archivo?')"
+										>
+											<i class="fas fa-trash mr-2"></i> Delete
+										</button>
+									</form>
+								}
 							}
 						</div>
 					</div>
@@ -139,14 +176,40 @@ templ Index(data IndexData) {
 										<div class="rounded-full bg-amber-100 dark:bg-amber-900/30 p-1.5 flex-shrink-0">
 											<i class="fas fa-folder text-amber-600 dark:text-amber-400"></i>
 										</div>
-										<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">
+											{ file.Name }
+										</div>
+									</div>
+								} else if file.FileType == FileTypeImage {
+									<div class="flex items-center">
+										<div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+											<img
+												src={ "/preview?filename=" + file.Path }
+												alt={ file.Name }
+												class="w-full h-full object-cover"
+											/>
+										</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">
+											{ file.Name }
+										</div>
+									</div>
+								} else if file.FileType == FileTypeVideo {
+									<div class="flex items-center">
+										<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-1.5 flex-shrink-0">
+											<i class="fas fa-video text-blue-600 dark:text-blue-400"></i>
+										</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">
+											{ file.Name }
+										</div>
 									</div>
 								} else {
 									<div class="flex items-center">
-										<div class="rounded-full bg-sky-100 dark:bg-sky-900/30 p-1.5 flex-shrink-0">
-											<i class="fas fa-file text-sky-600 dark:text-sky-400"></i>
+										<div class="rounded-full bg-gray-100 dark:bg-gray-700 p-1.5 flex-shrink-0">
+											<i class="fas fa-file text-gray-600 dark:text-gray-400"></i>
 										</div>
-										<div class="ml-3 font-medium text-gray-900 dark:text-white">{ file.Name }</div>
+										<div class="ml-3 font-medium text-gray-900 dark:text-white">
+											{ file.Name }
+										</div>
 									</div>
 								}
 							</td>
@@ -167,6 +230,15 @@ templ Index(data IndexData) {
 										>
 											<i class="fas fa-download"></i>
 										</a>
+										if file.FileType == FileTypeImage || file.FileType == FileTypeVideo {
+											<button
+												type="button"
+												class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+												@click="previewFile = { name: file.Name, path: file.Path, type: parseInt(file.FileType) }"
+											>
+												<i class="fas fa-eye"></i>
+											</button>
+										}
 										if file.IsAdmin {
 											<form method="post" action="/delete" class="inline">
 												<input type="hidden" name="filename" value={ file.Path } />
@@ -206,5 +278,61 @@ templ Index(data IndexData) {
 				</div>
 			</div>
 		}
+
+		<!-- Preview Modal -->
+		<div
+			x-show="previewFile !== null"
+			class="fixed inset-0 z-50 overflow-y-auto"
+			@keydown.escape.window="previewFile = null"
+		>
+			<div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-8">
+				<div
+					x-show="previewFile !== null"
+					x-transition:enter="ease-out duration-300"
+					x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+					x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+					x-transition:leave="ease-in duration-200"
+					x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+					x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+					class="relative transform overflow-hidden rounded-lg bg-white dark:bg-slate-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl sm:p-6"
+				>
+					<div class="absolute right-0 top-0 pr-4 pt-4">
+						<button
+							type="button"
+							class="rounded-md bg-white dark:bg-slate-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+							@click="previewFile = null"
+						>
+							<span class="sr-only">Close</span>
+							<i class="fas fa-times h-6 w-6"></i>
+						</button>
+					</div>
+					<div class="sm:flex sm:items-start">
+						<div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+							<h3 class="text-lg font-semibold leading-6 text-gray-900 dark:text-white mb-4" x-text="previewFile?.name"></h3>
+							
+							<template x-if="previewFile?.type === 1">
+								<div class="mt-2">
+									<img
+										:src="'/preview?filename=' + previewFile?.path"
+										:alt="previewFile?.name"
+										class="w-full h-auto rounded-lg"
+									/>
+								</div>
+							</template>
+							
+							<template x-if="previewFile?.type === 2">
+								<div class="mt-2">
+									<video
+										:src="'/preview?filename=' + previewFile?.path"
+										controls
+										class="w-full h-auto rounded-lg"
+									></video>
+								</div>
+							</template>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 }
