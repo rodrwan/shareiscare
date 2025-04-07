@@ -92,7 +92,11 @@ templ Index(data IndexData) {
 									<i class="fas fa-folder text-amber-600 dark:text-amber-400"></i>
 								</div>
 							} else if file.FileType == FileTypeImage {
-								<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+								<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer" 
+									data-name={ file.Name }
+									data-path={ file.Path }
+									data-type="image"
+									@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name">
 									<img
 										src={ "/preview?filename=" + file.Path }
 										alt={ file.Name }
@@ -100,7 +104,11 @@ templ Index(data IndexData) {
 									/>
 								</div>
 							} else if file.FileType == FileTypeVideo {
-								<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2 flex-shrink-0">
+								<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-2 flex-shrink-0 cursor-pointer"
+									data-name={ file.Name }
+									data-path={ file.Path }
+									data-type="video"
+									@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name">
 									<i class="fas fa-video text-blue-600 dark:text-blue-400"></i>
 								</div>
 							} else {
@@ -109,9 +117,23 @@ templ Index(data IndexData) {
 								</div>
 							}
 							<div class="ml-3">
-								<h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-									{ file.Name }
-								</h3>
+								if file.IsDir {
+									<h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
+										{ file.Name }
+									</h3>
+								} else if file.FileType == FileTypeImage || file.FileType == FileTypeVideo {
+									<h3 class="text-sm font-medium text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
+										data-name={ file.Name }
+										data-path={ file.Path }
+										data-type={ string(file.FileType) }
+										@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo ' + $el.dataset.type + ': ' + $el.dataset.name">
+										{ file.Name }
+									</h3>
+								} else {
+									<h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
+										{ file.Name }
+									</h3>
+								}
 								<p class="text-sm text-gray-500 dark:text-gray-400">
 									{ file.Size }
 								</p>
@@ -132,29 +154,6 @@ templ Index(data IndexData) {
 								>
 									<i class="fas fa-download mr-2"></i> Download
 								</a>
-								if file.FileType == FileTypeImage {
-									<button
-										type="button"
-										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center transition-colors"
-										data-name={ file.Name }
-										data-path={ file.Path }
-										data-type="image"
-										@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name"
-									>
-										<i class="fas fa-eye mr-2"></i> Preview
-									</button>
-								} else if file.FileType == FileTypeVideo {
-									<button
-										type="button"
-										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center transition-colors"
-										data-name={ file.Name }
-										data-path={ file.Path }
-										data-type="video"
-										@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name"
-									>
-										<i class="fas fa-eye mr-2"></i> Preview
-									</button>
-								}
 								if file.IsAdmin {
 									<form method="post" action="/delete" class="flex-1">
 										<input type="hidden" name="filename" value={ file.Path } />
@@ -201,7 +200,11 @@ templ Index(data IndexData) {
 									</div>
 								} else if file.FileType == FileTypeImage {
 									<div class="flex items-center">
-										<div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+										<div class="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+											data-name={ file.Name }
+											data-path={ file.Path }
+											data-type="image"
+											@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name">
 											<img
 												src={ "/preview?filename=" + file.Path }
 												alt={ file.Name }
@@ -209,16 +212,32 @@ templ Index(data IndexData) {
 											/>
 										</div>
 										<div class="ml-3 font-medium text-gray-900 dark:text-white">
-											{ file.Name }
+											<span class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
+												data-name={ file.Name }
+												data-path={ file.Path }
+												data-type="image"
+												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name">
+												{ file.Name }
+											</span>
 										</div>
 									</div>
 								} else if file.FileType == FileTypeVideo {
 									<div class="flex items-center">
-										<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-1.5 flex-shrink-0">
+										<div class="rounded-full bg-blue-100 dark:bg-blue-900/30 p-1.5 flex-shrink-0 cursor-pointer"
+											data-name={ file.Name }
+											data-path={ file.Path }
+											data-type="video"
+											@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name">
 											<i class="fas fa-video text-blue-600 dark:text-blue-400"></i>
 										</div>
 										<div class="ml-3 font-medium text-gray-900 dark:text-white">
-											{ file.Name }
+											<span class="cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
+												data-name={ file.Name }
+												data-path={ file.Path }
+												data-type="video"
+												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name">
+												{ file.Name }
+											</span>
 										</div>
 									</div>
 								} else {
@@ -249,29 +268,6 @@ templ Index(data IndexData) {
 										>
 											<i class="fas fa-download"></i>
 										</a>
-										if file.FileType == FileTypeImage {
-											<button
-												type="button"
-												class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-												data-name={ file.Name }
-												data-path={ file.Path }
-												data-type="image"
-												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name"
-											>
-												<i class="fas fa-eye"></i>
-											</button>
-										} else if file.FileType == FileTypeVideo {
-											<button
-												type="button"
-												class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-												data-name={ file.Name }
-												data-path={ file.Path }
-												data-type="video"
-												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name"
-											>
-												<i class="fas fa-eye"></i>
-											</button>
-										}
 										if file.IsAdmin {
 											<form method="post" action="/delete" class="inline">
 												<input type="hidden" name="filename" value={ file.Path } />
