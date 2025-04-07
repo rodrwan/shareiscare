@@ -2,7 +2,12 @@ package templates
 
 // Index is the main page that displays the file list
 templ Index(data IndexData) {
-	<div x-data="{ view: 'grid', previewFile: null }" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+	<div x-data="{ view: 'grid', previewFile: null, debugMessage: '' }" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<!-- Debug Info -->
+		<div x-show="debugMessage !== ''" class="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
+			<p x-text="debugMessage"></p>
+		</div>
+		
 		<!-- Header -->
 		<div class="mb-8">
 			<div class="flex items-center justify-between">
@@ -127,11 +132,25 @@ templ Index(data IndexData) {
 								>
 									<i class="fas fa-download mr-2"></i> Download
 								</a>
-								if file.FileType == FileTypeImage || file.FileType == FileTypeVideo {
+								if file.FileType == FileTypeImage {
 									<button
 										type="button"
 										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center transition-colors"
-										@click="previewFile = { name: file.Name, path: file.Path, type: parseInt(file.FileType) }"
+										data-name={ file.Name }
+										data-path={ file.Path }
+										data-type="image"
+										@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name"
+									>
+										<i class="fas fa-eye mr-2"></i> Preview
+									</button>
+								} else if file.FileType == FileTypeVideo {
+									<button
+										type="button"
+										class="bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm px-4 py-2 text-sm font-medium text-gray-700 dark:text-white flex items-center justify-center transition-colors"
+										data-name={ file.Name }
+										data-path={ file.Path }
+										data-type="video"
+										@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name"
 									>
 										<i class="fas fa-eye mr-2"></i> Preview
 									</button>
@@ -230,11 +249,25 @@ templ Index(data IndexData) {
 										>
 											<i class="fas fa-download"></i>
 										</a>
-										if file.FileType == FileTypeImage || file.FileType == FileTypeVideo {
+										if file.FileType == FileTypeImage {
 											<button
 												type="button"
 												class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
-												@click="previewFile = { name: file.Name, path: file.Path, type: parseInt(file.FileType) }"
+												data-name={ file.Name }
+												data-path={ file.Path }
+												data-type="image"
+												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo imagen: ' + $el.dataset.name"
+											>
+												<i class="fas fa-eye"></i>
+											</button>
+										} else if file.FileType == FileTypeVideo {
+											<button
+												type="button"
+												class="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300"
+												data-name={ file.Name }
+												data-path={ file.Path }
+												data-type="video"
+												@click="previewFile = { name: $el.dataset.name, path: $el.dataset.path, type: $el.dataset.type }; debugMessage = 'Abriendo video: ' + $el.dataset.name"
 											>
 												<i class="fas fa-eye"></i>
 											</button>
@@ -285,7 +318,8 @@ templ Index(data IndexData) {
 			class="fixed inset-0 z-50 overflow-y-auto"
 			@keydown.escape.window="previewFile = null"
 		>
-			<div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-8">
+			<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="previewFile = null"></div>
+			<div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-8 relative z-10">
 				<div
 					x-show="previewFile !== null"
 					x-transition:enter="ease-out duration-300"
@@ -310,7 +344,12 @@ templ Index(data IndexData) {
 						<div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
 							<h3 class="text-lg font-semibold leading-6 text-gray-900 dark:text-white mb-4" x-text="previewFile?.name"></h3>
 							
-							<template x-if="previewFile?.type === 1">
+							<div class="mb-4 text-xs text-gray-500">
+								<p>Tipo: <span x-text="previewFile?.type"></span></p>
+								<p>Ruta: <span x-text="previewFile?.path"></span></p>
+							</div>
+							
+							<template x-if="previewFile?.type === 'image'">
 								<div class="mt-2">
 									<img
 										:src="'/preview?filename=' + previewFile?.path"
@@ -320,7 +359,7 @@ templ Index(data IndexData) {
 								</div>
 							</template>
 							
-							<template x-if="previewFile?.type === 2">
+							<template x-if="previewFile?.type === 'video'">
 								<div class="mt-2">
 									<video
 										:src="'/preview?filename=' + previewFile?.path"
