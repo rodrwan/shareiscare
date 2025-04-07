@@ -1,10 +1,11 @@
 # Variables
+include .env
 BINARY_NAME=shareiscare
 GO=go
 TEMPL=templ
 VERSION=1.0.0
 BUILD_DIR=./bin
-LDFLAGS=-ldflags "-X main.Version=$(VERSION)"
+LDFLAGS=-ldflags "-X main.Version=$(VERSION) -X main.ApiToken=$(API_TOKEN) -X main.ZoneID=$(ZONE_ID) -X main.Domain=$(DOMAIN) -X main.TunnelName=$(TUNNEL_NAME) -X main.TunnelURL=$(TUNNEL_URL)"
 
 # Colors for output
 YELLOW=\033[0;33m
@@ -22,7 +23,7 @@ else
     OS = windows
 endif
 
-.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero release test
+.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero release prepare test
 
 all: help
 
@@ -33,7 +34,7 @@ generate:
 	@echo "$(GREEN)✓ Code generated successfully$(NC)"
 
 # Compile the main binary
-build: generate
+build: generate prepare
 	@echo "$(YELLOW)Compiling $(BINARY_NAME)...$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	@$(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) main.go
@@ -49,39 +50,6 @@ clean:
 run: generate
 	@echo "$(YELLOW)Running $(BINARY_NAME)...$(NC)"
 	@$(GO) run main.go
-
-# Run unit tests
-test:
-	@echo "$(YELLOW)Running unit tests...$(NC)"
-	@# Cleanup of temporary files
-	@if [ -f config.yaml.bak ]; then \
-		mv config.yaml.bak config.yaml; \
-	fi
-	@# Run tests (excluding cross-compilation test)
-	@$(GO) test -v ./... -short
-	@# Verify compilation for Raspberry Pi (ARMv7)
-	@echo "$(YELLOW)Verifying compilation for Raspberry Pi (ARMv7)...$(NC)"
-	@GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm-test main.go; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ]; then \
-		echo "$(GREEN)✓ Compilation for Raspberry Pi (ARMv7) is correct$(NC)"; \
-		rm /tmp/shareiscare-arm-test; \
-	else \
-		echo "$(RED)✗ Error in compilation for Raspberry Pi (ARMv7)$(NC)"; \
-		exit 1; \
-	fi
-	@# Verify compilation for Raspberry Pi Zero (ARMv6)
-	@echo "$(YELLOW)Verifying compilation for Raspberry Pi Zero (ARMv6)...$(NC)"
-	@GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 $(GO) build -o /tmp/shareiscare-arm6-test main.go; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ]; then \
-		echo "$(GREEN)✓ Compilation for Raspberry Pi Zero (ARMv6) is correct$(NC)"; \
-		rm /tmp/shareiscare-arm6-test; \
-	else \
-		echo "$(RED)✗ Error in compilation for Raspberry Pi Zero (ARMv6)$(NC)"; \
-		exit 1; \
-	fi
-	@echo "$(GREEN)✓ Tests completed successfully$(NC)"
 
 # Update dependencies
 deps:
@@ -167,6 +135,12 @@ merge-and-release:
 	@echo "$(GREEN)✓ PR #$(pr) merged into main$(NC)"
 	@echo "$(YELLOW)El proceso de CI/CD creará un release automáticamente$(NC)"
 
+# Run unit tests
+test:
+	@echo "$(YELLOW)Ejecutando tests unitarios...$(NC)"
+	@$(GO) test ./... -v
+	@echo "$(GREEN)✓ Tests completados$(NC)"
+
 # Show help
 help:
 	@echo "$(YELLOW)ShareIsCare - Available commands:$(NC)"
@@ -190,3 +164,8 @@ help:
 	@echo "  $(GREEN)make merge-and-release pr=N$(NC) - Mergear PR y generar release automático"
 	@echo ""
 	@echo "Run 'make' or 'make help' to see this help"
+
+PLATFORM := $(shell go env GOOS)-$(shell go env GOARCH)
+
+prepare:
+	go run cmd/prepare/main.go

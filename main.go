@@ -1,18 +1,37 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rodrwan/shareiscare/config"
 	"github.com/rodrwan/shareiscare/handlers"
+	"github.com/rodrwan/shareiscare/proxy"
 )
 
-// Version is the program version, injected during compilation
-var Version = "dev"
+const (
+	domain = "shareiscare.com"
+)
+
+//go:embed cloudflared/**/*
+var embeddedBinaries embed.FS
+
+var (
+	// Version is the program version, injected during compilation
+	Version    = "dev"
+	ApiToken   = "<api_token>"
+	ZoneID     = "<zone_id>"
+	Domain     = "<domain>"
+	TunnelName = "<tunnel_name>"
+	TunnelURL  = "<tunnel_url>"
+)
 
 // PrintHelp displays program help
 func PrintHelp() {
@@ -73,11 +92,11 @@ func main() {
 
 			// Check if the file already exists
 			if _, err := os.Stat(configFile); err == nil {
-				fmt.Printf("The file %s already exists. Do you want to overwrite it? (y/n): ", configFile)
+				log.Printf("The file %s already exists. Do you want to overwrite it? (y/n): ", configFile)
 				var response string
 				fmt.Scanln(&response)
 				if strings.ToLower(response) != "y" {
-					fmt.Println("Operation cancelled.")
+					log.Println("Operation cancelled.")
 					return
 				}
 			}
@@ -85,12 +104,12 @@ func main() {
 			// Generate default configuration
 			cfg := config.DefaultConfig()
 			if err := config.SaveConfig(cfg, configFile); err != nil {
-				log.Fatalf("Error generating configuration: %v", err)
+				log.Panicf("Error generating configuration: %v", err)
 			}
 
-			fmt.Printf("Configuration file generated: %s\n", configFile)
-			fmt.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
-			fmt.Println("IMPORTANT: It is recommended to change the default credentials.")
+			log.Printf("Configuration file generated: %s\n", configFile)
+			log.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
+			log.Println("IMPORTANT: It is recommended to change the default credentials.")
 			return
 
 		case "help", "-h", "--help":
@@ -100,11 +119,11 @@ func main() {
 
 		case "version", "-v", "--version":
 			// Command to display program version
-			fmt.Printf("ShareIsCare v%s\n", Version)
+			log.Printf("ShareIsCare v%s\n", Version)
 			return
 
 		default:
-			fmt.Printf("Unknown command: %s\n\n", cmd)
+			log.Printf("Unknown command: %s\n\n", cmd)
 			PrintHelp()
 			return
 		}
@@ -113,21 +132,120 @@ func main() {
 	// Normal mode: start server
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Error loading configuration: %v", err)
+		log.Panicf("Error loading configuration: %v", err)
 	}
 
 	// If the configuration file doesn't exist, create it
 	if _, err := os.Stat("config.yaml"); os.IsNotExist(err) {
-		fmt.Println("Configuration file not found. Creating config.yaml with default values...")
+		log.Println("Configuration file not found. Creating config.yaml with default values...")
 		if err := config.SaveConfig(cfg, "config.yaml"); err != nil {
-			log.Printf("Warning: Could not save configuration file: %v", err)
+			log.Panicf("Warning: Could not save configuration file: %v", err)
 		} else {
-			fmt.Println("Configuration file generated: config.yaml")
-			fmt.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
-			fmt.Println("IMPORTANT: It is recommended to change the default credentials.")
+			log.Println("Configuration file generated: config.yaml")
+			log.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
+			log.Println("IMPORTANT: It is recommended to change the default credentials.")
 		}
 	}
 
 	// Start the server
-	RunServer(cfg)
+	go RunServer(cfg)
+
+	log.Println("⌛ Checking if the server is listening on localhost:" + strconv.Itoa(cfg.Port) + "...")
+
+	timeout := time.After(5 * time.Second)
+	ticker := time.NewTicker(300 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			log.Fatal("❌ Server did not respond on port " + strconv.Itoa(cfg.Port) + " after 5s. Aborting.")
+		case <-ticker.C:
+			resp, err := http.Get(fmt.Sprintf("http://localhost:%d", cfg.Port))
+			if err == nil {
+				resp.Body.Close()
+				log.Println("✅ Server is ready. Starting tunnel...")
+				goto RUN_TUNNEL
+			}
+		}
+	}
+
+RUN_TUNNEL:
+	hostname := cfg.Hostname
+
+	if hostname == "" {
+		htnm, err := proxy.CreateDNSRecord(Domain, TunnelURL, ZoneID, ApiToken)
+		if err != nil {
+			log.Panicf("❌ Could not create DNS record: %v", err)
+		}
+		hostname = htnm
+		config.SetHostname(hostname)
+	}
+
+	log.Println("⚙️ provisioning hostname", hostname)
+
+	// Check if we're running in a test environment
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		log.Println("⚠️ Running in GitHub Actions environment, skipping cloudflared setup")
+		return
+	}
+
+	binPath, err := proxy.ExtractCloudflaredBinary(embeddedBinaries)
+	if err != nil {
+		log.Panicf("❌ Error extracting cloudflared: %v", err)
+	}
+
+	log.Println("🚀 Launching cloudflared...")
+	tmpFile, err := proxy.RunCloudflared(binPath, hostname, cfg.Port, TunnelName)
+	if err != nil {
+		log.Panicf("❌ Error running cloudflared: %v", err)
+	}
+	defer os.Remove(tmpFile) // Clean up temporary file when done
+
+	// Run cloudflared with temporary configuration file
+	cmd := exec.Command(binPath,
+		"tunnel",
+		"--config", tmpFile,
+		"run",
+		TunnelName,
+	)
+
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		log.Panicf("❌ Error starting cloudflared: %v", err)
+	}
+
+	// Wait a moment to see if the tunnel establishes
+	time.Sleep(5 * time.Second)
+
+	ticker = time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Println("🔍 Checking if the tunnel is established...")
+			resp, err := http.Get(fmt.Sprintf("https://%s", hostname))
+			if err == nil {
+				resp.Body.Close()
+				log.Println("✅ Tunnel is established. Starting server...")
+				goto RUN_SERVER
+			}
+		}
+	}
+
+RUN_SERVER:
+	// Check if the process is still running
+	if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
+		log.Panicf("❌ cloudflared closed unexpectedly")
+	}
+
+	log.Println("🌐 You can access the server at https://" + hostname)
+	// Wait for the command to finish
+	if err := cmd.Wait(); err != nil {
+		log.Panicf("❌ Error waiting for command to finish: %v", err)
+	}
+
+	fmt.Println("👋 Goodbye!")
+	os.Exit(0)
 }
