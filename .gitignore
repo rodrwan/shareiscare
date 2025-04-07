@@ -8,4 +8,5 @@
 
 bin/
 build/
-cloudflared/
+cloudflared/*
+!cloudflared/.gitkeep
