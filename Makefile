@@ -22,7 +22,7 @@ else
     OS = windows
 endif
 
-.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero release test
+.PHONY: all build clean run help install generate cross-build build-linux build-windows build-mac build-raspberrypi build-raspberrypi-zero release test prepare
 
 all: help
 
@@ -33,7 +33,7 @@ generate:
 	@echo "$(GREEN)✓ Code generated successfully$(NC)"
 
 # Compile the main binary
-build: generate
+build: generate prepare
 	@echo "$(YELLOW)Compiling $(BINARY_NAME)...$(NC)"
 	@mkdir -p $(BUILD_DIR)
 	@$(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) main.go
@@ -190,3 +190,8 @@ help:
 	@echo "  $(GREEN)make merge-and-release pr=N$(NC) - Mergear PR y generar release automático"
 	@echo ""
 	@echo "Run 'make' or 'make help' to see this help"
+
+PLATFORM := $(shell go env GOOS)-$(shell go env GOARCH)
+
+prepare:
+	go run cmd/prepare/main.go

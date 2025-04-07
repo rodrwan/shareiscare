@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,15 @@ import (
 
 	"github.com/rodrwan/shareiscare/config"
 	"github.com/rodrwan/shareiscare/handlers"
+	"github.com/rodrwan/shareiscare/proxy"
 )
+
+const (
+	domain = "shareiscare.com"
+)
+
+//go:embed cloudflared/**/*
+var embeddedBinaries embed.FS
 
 // Version is the program version, injected during compilation
 var Version = "dev"
@@ -126,6 +135,24 @@ func main() {
 			fmt.Printf("Default user: %s / Password: %s\n", cfg.Username, cfg.Password)
 			fmt.Println("IMPORTANT: It is recommended to change the default credentials.")
 		}
+	}
+
+	hostname, err := proxy.CreateDNSRecord()
+	if err != nil {
+		log.Fatalf("❌ No se pudo crear el registro DNS: %v", err)
+	}
+	fmt.Println("🌐 Creando subdominio:", hostname)
+
+	fmt.Println("📦 Extrayendo binario embebido...")
+	binPath, err := proxy.ExtractCloudflaredBinary(embeddedBinaries)
+	if err != nil {
+		log.Fatalf("❌ Error extrayendo cloudflared: %v", err)
+	}
+
+	fmt.Println("🚀 Lanzando cloudflared...")
+	err = proxy.RunCloudflared(binPath, hostname, cfg.Port)
+	if err != nil {
+		log.Fatalf("❌ Error ejecutando cloudflared: %v", err)
 	}
 
 	// Start the server
