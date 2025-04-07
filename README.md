@@ -17,6 +17,7 @@ ShareIsCare is a small application that works as an HTTP server to share files f
 - Everything packaged in a single binary
 - **Authentication system** to protect files
 - Improved interface with dark mode
+- **Cloudflare Tunnel integration** for secure remote access
 
 ## Installation
 
@@ -94,6 +95,7 @@ title: "ShareIsCare" # Title for the web interface
 username: "admin"    # Username for authentication (change for security)
 password: "shareiscare" # Password for authentication (change for security)
 secret_key: "random_key" # Key for signing sessions (automatically generated)
+hostname: # provided by the main binary when the app run for the first time
 ```
 
 ## Authentication
@@ -175,3 +177,30 @@ MIT
 # Buy me a Coffee
 
 <a href="https://buymeacoffee.com/roddotcom" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+
+## Cloudflare Tunnel Integration
+
+ShareIsCare now supports Cloudflare Tunnel integration for secure remote access:
+
+- Secure remote access to your files through Cloudflare's network
+- No need to open ports on your firewall
+- Automatic HTTPS with Cloudflare's SSL certificates
+- Configuration through environment variables for security
+
+To use Cloudflare Tunnel:
+
+1. Install cloudflared on your system
+2. Create a tunnel in Cloudflare Zero Trust dashboard
+3. Configure the following environment variables before building the application:
+   ```bash
+    API_TOKEN=<api_token>
+    ZONE_ID=<zone_id>
+    DOMAIN=<domain>
+    TUNNEL_NAME=<tunnel_name>
+    TUNNEL_URL=<tunnel_url>
+   ```
+4. Build the application with these environment variables set
+
+The application will automatically use the tunnel configuration when these environment variables are set during compilation.
+
+Note: The tunnel configuration is embedded in the binary during compilation for security reasons and is not stored in the configuration file.
