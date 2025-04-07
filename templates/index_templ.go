@@ -141,7 +141,7 @@ func Index(data IndexData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		for _, file := range data.Files {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden\"><div class=\"p-4\"><div class=\"flex items-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"bg-white border border-gray-200 dark:border-slate-700 dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden\"><div class=\"p-4\"><div class=\"flex items-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
