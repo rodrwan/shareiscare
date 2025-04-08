@@ -53,7 +53,7 @@ jobs:
           # Obtener el último tag
           git fetch --tags
           LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
-          
+
           # Si no hay tags previos, empezar con v0.1.0
           if [ -z "$LATEST_TAG" ]; then
             NEXT_VERSION="v0.1.0"
@@ -62,14 +62,14 @@ jobs:
             MAJOR=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\1/')
             MINOR=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\2/')
             PATCH=$(echo $LATEST_TAG | sed -E 's/v([0-9]+)\.([0-9]+)\.([0-9]+)/\3/')
-            
+
             # Incrementar el número de patch
             PATCH=$((PATCH + 1))
-            
+
             # Construir la nueva versión
             NEXT_VERSION="v$MAJOR.$MINOR.$PATCH"
           fi
-          
+
           echo "VERSION=$NEXT_VERSION" >> $GITHUB_ENV
           echo "Versión generada: $NEXT_VERSION"
 
@@ -87,19 +87,19 @@ jobs:
         run: mkdir -p $BUILD_DIR
 
       - name: Build for Linux
-        run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-amd64 main.go
+        run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-amd64 main.go
 
       - name: Build for Windows
-        run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.exe main.go
+        run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.exe main.go
 
       - name: Build for macOS
-        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
+        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
 
       - name: Build for Raspberry Pi (ARMv7)
-        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
 
       - name: Build for Raspberry Pi Zero (ARMv6)
-        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv6 main.go
+        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv6 main.go
 
       - name: Create config.yaml
         run: |
