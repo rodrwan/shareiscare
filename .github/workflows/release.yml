@@ -8,6 +8,13 @@ on:
 permissions:
   contents: write # Necesario para crear releases
 
+env:
+  API_TOKEN: ${{ secrets.API_TOKEN }}
+  ZONE_ID: ${{ secrets.ZONE_ID }}
+  DOMAIN: ${{ secrets.DOMAIN }}
+  TUNNEL_NAME: ${{ secrets.TUNNEL_NAME }}
+  TUNNEL_URL: ${{ secrets.TUNNEL_URL }}
+
 jobs:
   build-and-release:
     name: Build and Release
