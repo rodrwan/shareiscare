@@ -174,11 +174,11 @@ RUN_TUNNEL:
 	hostname := cfg.Hostname
 
 	if hostname == "" {
-		htnm, err := proxy.CreateDNSRecord(Domain, TunnelURL, ZoneID, ApiToken)
+		newDnsRecord, err := proxy.CreateDNSRecord(Domain, TunnelURL, ZoneID, ApiToken)
 		if err != nil {
 			log.Panicf("❌ Could not create DNS record: %v", err)
 		}
-		hostname = htnm
+		hostname = newDnsRecord
 		config.SetHostname(hostname)
 	}
 
@@ -188,11 +188,6 @@ RUN_TUNNEL:
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		log.Println("⚠️ Running in GitHub Actions environment, skipping cloudflared setup")
 		return
-	}
-
-	err = proxy.PrepareCloudflared()
-	if err != nil {
-		log.Panicf("❌ Error preparing cloudflared: %v", err)
 	}
 
 	binPath, err := proxy.ExtractCloudflaredBinary(embeddedBinaries)
