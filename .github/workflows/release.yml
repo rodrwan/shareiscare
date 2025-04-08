@@ -8,17 +8,17 @@ on:
 permissions:
   contents: write # Necesario para crear releases
 
-env:
-  API_TOKEN: ${{ secrets.API_TOKEN }}
-  ZONE_ID: ${{ secrets.ZONE_ID }}
-  DOMAIN: ${{ secrets.DOMAIN }}
-  TUNNEL_NAME: ${{ secrets.TUNNEL_NAME }}
-  TUNNEL_URL: ${{ secrets.TUNNEL_URL }}
-
 jobs:
   build-and-release:
     name: Build and Release
     runs-on: ubuntu-latest
+    environment: Production
+    env:
+      API_TOKEN: ${{ secrets.API_TOKEN }}
+      ZONE_ID: ${{ secrets.ZONE_ID }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      TUNNEL_NAME: ${{ secrets.TUNNEL_NAME }}
+      TUNNEL_URL: ${{ secrets.TUNNEL_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -94,19 +94,19 @@ jobs:
         run: mkdir -p $BUILD_DIR
 
       - name: Build for Linux
-        run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-amd64 main.go
+        run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-amd64 main.go
 
       - name: Build for Windows
-        run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.exe main.go
+        run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.exe main.go
 
       - name: Build for macOS
-        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
+        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
 
       - name: Build for Raspberry Pi (ARMv7)
-        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
+        run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
 
       - name: Build for Raspberry Pi Zero (ARMv6)
-        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ secrets.API_TOKEN }} -X main.ZoneID=${{ secrets.ZONE_ID }} -X main.Domain=${{ secrets.DOMAIN }} -X main.TunnelName=${{ secrets.TUNNEL_NAME }} -X main.TunnelURL=${{ secrets.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv6 main.go
+        run: GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.APIToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv6 main.go
 
       - name: Create config.yaml
         run: |
