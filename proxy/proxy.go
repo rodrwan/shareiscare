@@ -103,16 +103,42 @@ func ExtractCloudflaredBinary(embeddedBinaries embed.FS) (string, error) {
 		return "", fmt.Errorf("sistema operativo no soportado: %s", runtime.GOOS)
 	}
 
+	// Verificar si el binario existe en el FS embebido
+	_, err := embeddedBinaries.ReadFile(binPath)
+	if err != nil {
+		return "", fmt.Errorf("binario de cloudflared no encontrado para %s/%s: %w", runtime.GOOS, runtime.GOARCH, err)
+	}
+
+	// Crear directorio temporal
+	tmpDir, err := os.MkdirTemp("", "cloudflared-*")
+	if err != nil {
+		return "", fmt.Errorf("error creando directorio temporal: %w", err)
+	}
+
+	// Leer el binario embebido
 	data, err := embeddedBinaries.ReadFile(binPath)
 	if err != nil {
+		os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("error leyendo cloudflared embebido: %w", err)
 	}
 
-	tmpDir, _ := os.MkdirTemp("", "cloudflared-*")
+	// Construir la ruta de salida
 	outputPath := filepath.Join(tmpDir, filepath.Base(binPath))
+
+	// Escribir el binario con permisos de ejecución
 	err = os.WriteFile(outputPath, data, 0755)
 	if err != nil {
+		os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("error escribiendo binario: %w", err)
+	}
+
+	// Verificar que el binario es ejecutable
+	if runtime.GOOS != "windows" {
+		cmd := exec.Command(outputPath, "version")
+		if err := cmd.Run(); err != nil {
+			os.RemoveAll(tmpDir)
+			return "", fmt.Errorf("error verificando binario: %w", err)
+		}
 	}
 
 	return outputPath, nil
