@@ -190,6 +190,11 @@ RUN_TUNNEL:
 		return
 	}
 
+	err = proxy.PrepareCloudflared()
+	if err != nil {
+		log.Panicf("❌ Error preparing cloudflared: %v", err)
+	}
+
 	binPath, err := proxy.ExtractCloudflaredBinary(embeddedBinaries)
 	if err != nil {
 		log.Panicf("❌ Error extracting cloudflared: %v", err)
