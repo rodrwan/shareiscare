@@ -102,6 +102,9 @@ jobs:
       - name: Build for macOS
         run: GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.ApiToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
 
+      - name: Build for macOS arm64
+        run: GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.ApiToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64 main.go
+
       - name: Build for Raspberry Pi (ARMv7)
         run: GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -ldflags "-X main.Version=${{ env.VERSION }} -X main.ApiToken=${{ env.API_TOKEN }} -X main.ZoneID=${{ env.ZONE_ID }} -X main.Domain=${{ env.DOMAIN }} -X main.TunnelName=${{ env.TUNNEL_NAME }} -X main.TunnelURL=${{ env.TUNNEL_URL }}" -o ${{ env.BUILD_DIR }}/shareiscare-linux-armv7 main.go
 
@@ -133,6 +136,10 @@ jobs:
           cp config.yaml shareiscare-darwin-amd64.yaml
           zip -j shareiscare-darwin-amd64.zip shareiscare-darwin-amd64 shareiscare-darwin-amd64.yaml
 
+          # macOS arm64 package
+          cp config.yaml shareiscare-darwin-arm64.yaml
+          zip -j shareiscare-darwin-arm64.zip shareiscare-darwin-arm64 shareiscare-darwin-arm64.yaml
+
           # Raspberry Pi package
           cp config.yaml shareiscare-linux-armv7.yaml
           zip -j shareiscare-linux-armv7.zip shareiscare-linux-armv7 shareiscare-linux-armv7.yaml
@@ -154,5 +161,6 @@ jobs:
             ${{ env.BUILD_DIR }}/shareiscare-linux-amd64.zip
             ${{ env.BUILD_DIR }}/shareiscare-windows-amd64.zip
             ${{ env.BUILD_DIR }}/shareiscare-darwin-amd64.zip
+            ${{ env.BUILD_DIR }}/shareiscare-darwin-arm64.zip
             ${{ env.BUILD_DIR }}/shareiscare-linux-armv7.zip
             ${{ env.BUILD_DIR }}/shareiscare-linux-armv6.zip

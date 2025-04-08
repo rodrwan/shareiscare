@@ -24,10 +24,18 @@ func main() {
 			return
 		}
 	case "darwin":
-		// If the cloudflared binary is already in the cloudflared directory, skip the download
-		if _, err := os.Stat("cloudflared/darwin-arm64/cloudflared"); err == nil {
-			fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
-			return
+		if goarch == "arm64" {
+			// If the cloudflared binary is already in the cloudflared directory, skip the download
+			if _, err := os.Stat("cloudflared/darwin-arm64/cloudflared"); err == nil {
+				fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
+				return
+			}
+		} else {
+			// If the cloudflared binary is already in the cloudflared directory, skip the download
+			if _, err := os.Stat("cloudflared/darwin-amd64/cloudflared"); err == nil {
+				fmt.Println("🔍 cloudflared ya está en el directorio cloudflared")
+				return
+			}
 		}
 	case "windows":
 		// If the cloudflared binary is already in the cloudflared directory, skip the download
@@ -45,8 +53,13 @@ func main() {
 		url = "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-linux-amd64"
 		outPath = "cloudflared/linux-amd64/cloudflared"
 	case "darwin":
-		url = "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-darwin-arm64.tgz"
-		outPath = "cloudflared/darwin-arm64/cloudflared.tgz"
+		if goarch == "arm64" {
+			url = "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-darwin-arm64.tgz"
+			outPath = "cloudflared/darwin-arm64/cloudflared.tgz"
+		} else {
+			url = "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-darwin-amd64.tgz"
+			outPath = "cloudflared/darwin-amd64/cloudflared.tgz"
+		}
 	case "windows":
 		url = "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-windows-amd64.exe"
 		outPath = "cloudflared/windows-amd64/cloudflared.exe"
