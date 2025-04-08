@@ -31,6 +31,27 @@ jobs:
           go-version: '1.24'
           check-latest: true
 
+      - name: Download cloudflared binaries
+        run: |
+          mkdir -p cloudflared/linux-amd64 cloudflared/darwin-amd64 cloudflared/darwin-arm64 cloudflared/windows-amd64
+
+          # Linux AMD64
+          curl -L "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-linux-amd64" -o cloudflared/linux-amd64/cloudflared
+          chmod +x cloudflared/linux-amd64/cloudflared
+
+          # macOS AMD64
+          curl -L "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-darwin-amd64.tgz" -o cloudflared-darwin-amd64.tgz
+          tar xzf cloudflared-darwin-amd64.tgz -C cloudflared/darwin-amd64/
+          rm cloudflared-darwin-amd64.tgz
+
+          # macOS ARM64
+          curl -L "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-darwin-arm64.tgz" -o cloudflared-darwin-arm64.tgz
+          tar xzf cloudflared-darwin-arm64.tgz -C cloudflared/darwin-arm64/
+          rm cloudflared-darwin-arm64.tgz
+
+          # Windows AMD64
+          curl -L "https://github.com/cloudflare/cloudflared/releases/download/2025.4.0/cloudflared-windows-amd64.exe" -o cloudflared/windows-amd64/cloudflared.exe
+
       - name: Install templ
         run: go install github.com/a-h/templ/cmd/templ@latest
 
