@@ -1,3 +1,5 @@
 /bin
 /.shareiscare.json
 /shareiscare.zip
+.claude/
+worker/.wrangler/
