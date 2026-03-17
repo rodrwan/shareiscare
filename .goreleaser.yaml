@@ -1,0 +1,59 @@
+project_name: shareiscare
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: shareiscare
+    main: ./cmd/shareiscare
+    binary: shareiscare
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - name: shareiscare
+    homepage: https://github.com/rodrwan/shareiscare
+    description: Share any folder to the internet. One command. No cloudflared. No ngrok. Your files, your tunnel, your rules.
+    repository:
+      owner: rodrwan
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    install: |
+      bin.install "shareiscare"
+    test: |
+      system "#{bin}/shareiscare", "--version"

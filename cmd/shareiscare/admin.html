@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>shareiscare — admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root {
+    --bg:      #0c0c0c;
+    --surface: #131313;
+    --border:  #1f1f1f;
+    --accent:  #c8a96e;
+    --green:   #7c9e87;
+    --red:     #b05050;
+    --text:    #e5ddd0;
+    --muted:   #787878;
+    --dim:     #3a3a3a;
+    --sans:    'Google Sans', 'Segoe UI', sans-serif;
+    --mono:    'Google Sans Mono', 'IBM Plex Mono', monospace;
+    --serif:   'Playfair Display', Georgia, serif;
+  }
+
+  html,body { height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+
+  body::after {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity:.5;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  #app { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* ── SVG icon base ── */
+  .tree-icon svg, .rule-del svg, .tree-search-icon svg {
+    width: 16px; height: 16px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 28px 48px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+
+  .logo { display:flex; align-items:baseline; gap:12px; }
+  .logo-text { font-family:var(--serif); font-size:22px; font-weight:700; letter-spacing:-.02em; color:var(--text); }
+  .logo-text em { font-style:italic; color:var(--accent); }
+  .badge-admin {
+    display:flex; align-items:center; gap:7px;
+    font-size:11px; color:var(--accent); letter-spacing:.1em; text-transform:uppercase;
+    border:1px solid var(--accent); border-radius:100px; padding:6px 14px;
+  }
+
+  /* ── Layout ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    flex: 1; min-height: 0;
+  }
+
+  @media (max-width:900px) {
+    .main-grid { grid-template-columns:1fr; }
+    .sidebar { border-left:none; border-top:1px solid var(--border); }
+  }
+
+  /* ── Tree panel ── */
+  .tree-panel { overflow-y: auto; display: flex; flex-direction: column; }
+
+  .tree-header {
+    padding: 14px 48px;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  .tree-header-actions { display: flex; align-items: center; gap: 12px; }
+  .tree-header #stats { font-size: 11px; letter-spacing: .06em; }
+
+  .tree-action {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); cursor: pointer; font-size: 11px; padding: 4px 10px;
+    font-family: var(--sans); letter-spacing: .04em; transition: all .15s;
+  }
+  .tree-action:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Tree search ── */
+  .tree-search-bar {
+    padding: 8px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .tree-search-icon { color: var(--dim); display: flex; align-items: center; }
+  .tree-search-bar input {
+    flex: 1; background: transparent; border: none;
+    color: var(--text); font-family: var(--mono); font-size: 13px;
+    outline: none; padding: 4px 0;
+  }
+  .tree-search-bar input::placeholder { color: var(--dim); }
+
+  /* ── Tree list ── */
+  .tree-list { list-style:none; padding:0; overflow-y: auto; flex: 1; }
+
+  .tree-item {
+    display: flex; align-items: center;
+    padding: 5px 48px;
+    font-size: 13px; cursor: default;
+    transition: background .1s;
+  }
+  .tree-item:hover { background:#111; }
+  .tree-item.hidden-item { opacity: .4; }
+  .tree-item.hidden-item .tree-name { text-decoration: line-through; }
+
+  .tree-indent { display:inline-block; width:20px; flex-shrink:0; }
+
+  .tree-chevron {
+    width: 20px; height: 24px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    color: var(--dim); transition: color .15s, transform .15s;
+    padding: 0; font-size: 12px;
+  }
+  .tree-chevron:hover { color: var(--accent); }
+  .tree-chevron.open { transform: rotate(90deg); }
+  .tree-chevron-space { width: 20px; flex-shrink: 0; }
+
+  .tree-icon { width:20px; text-align:center; flex-shrink:0; margin-right:8px; color: var(--muted); display:flex; align-items:center; justify-content:center; }
+  .tree-item.dir-item .tree-icon { color: var(--green); }
+
+  .tree-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family: var(--mono); font-size: 13px; }
+
+  mark { background: rgba(200,169,110,.2); color: var(--accent); border-radius: 2px; padding: 0 1px; }
+
+  .tree-badge {
+    font-size: 10px; letter-spacing:.04em; text-transform:uppercase;
+    padding: 2px 7px; border-radius:3px; margin-left:8px;
+    background:#191919; border:1px solid var(--dim); color:var(--muted); flex-shrink:0;
+    font-family: var(--mono);
+  }
+
+  .tree-toggle {
+    font-size: 11px; padding: 4px 10px; margin-left: 8px;
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); cursor: pointer; transition: all .15s; flex-shrink: 0;
+    font-family: var(--sans); min-height: 28px;
+  }
+  .tree-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .tree-toggle.is-hidden:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+
+  /* ── Defaults toggle ── */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle-label { font-size: 13px; color: var(--text); }
+
+  .switch {
+    position:relative; width:40px; height:22px;
+    background:var(--dim); border-radius:11px; cursor:pointer; transition:background .2s;
+  }
+  .switch.on { background:var(--green); }
+  .switch::after {
+    content:''; position:absolute; top:3px; left:3px;
+    width:16px; height:16px; border-radius:50%; background:var(--text);
+    transition:transform .2s;
+  }
+  .switch.on::after { transform:translateX(18px); }
+
+  /* ── Rules list ── */
+  .rules-scroll { max-height:340px; overflow-y:auto; }
+
+  .rule-item {
+    display: flex; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid #161616; gap: 10px;
+  }
+
+  .rule-pattern {
+    flex:1; font-size: 13px; font-family: var(--mono);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
+  .rule-source {
+    font-size: 10px; letter-spacing:.04em; text-transform:uppercase;
+    padding: 2px 7px; border-radius:3px;
+    background:#191919; border:1px solid var(--dim); color:var(--muted); flex-shrink:0;
+    font-family: var(--mono);
+  }
+  .rule-source.user { border-color:var(--accent); color:var(--accent); }
+
+  .rule-del {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--muted); cursor: pointer; padding: 4px 8px;
+    transition: all .15s; display: flex; align-items: center; justify-content: center;
+    min-width: 28px; min-height: 28px;
+  }
+  .rule-del:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Add rule input ── */
+  .add-rule { display:flex; gap:8px; margin-top:14px; }
+  .add-rule input {
+    flex:1; background:var(--surface); border:1px solid var(--border); border-radius:5px;
+    padding: 8px 12px; color:var(--text); font-family:var(--mono); font-size: 13px;
+    outline:none; transition:border-color .15s;
+  }
+  .add-rule input:focus { border-color:var(--accent); }
+  .add-rule input::placeholder { color:var(--muted); }
+  .add-rule button {
+    background:var(--accent); border:none; border-radius:5px;
+    padding: 8px 16px; color:var(--bg); font-family:var(--mono); font-size: 12px;
+    font-weight:500; cursor:pointer; transition:opacity .15s; white-space:nowrap;
+  }
+  .add-rule button:hover { opacity:.85; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 20px; display: flex; align-items: center; gap: 16px;
+    font-size: 13px; color: var(--text); z-index: 100;
+    transition: transform .3s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,.4);
+    overflow: hidden;
+  }
+  .toast.visible { transform: translateX(-50%) translateY(0); }
+  .toast-msg { white-space: nowrap; }
+  .toast-undo {
+    background: none; border: 1px solid var(--accent); border-radius: 4px;
+    color: var(--accent); padding: 4px 14px; cursor: pointer; font-size: 12px;
+    font-family: var(--sans); transition: all .15s; white-space: nowrap;
+  }
+  .toast-undo:hover { background: var(--accent); color: var(--bg); }
+  .toast-timer {
+    position: absolute; bottom: 0; left: 0; height: 2px;
+    background: var(--accent); border-radius: 0 0 8px 8px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    margin-top:auto; padding: 16px 48px;
+    border-top:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size: 12px; color:var(--muted); letter-spacing:.04em;
+  }
+  footer a { color:var(--muted); text-decoration:none; transition:color .15s }
+  footer a:hover { color:var(--accent) }
+
+  ::-webkit-scrollbar { width:6px }
+  ::-webkit-scrollbar-track { background:transparent }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px }
+  ::-webkit-scrollbar-thumb:hover { background:var(--dim) }
+
+  @media (max-width:768px) {
+    header,.tree-header,.tree-item,.tree-search-bar,footer { padding-left:24px; padding-right:24px }
+    .sidebar-section { padding:16px 24px }
+  }
+  @media (max-width:480px) {
+    header,.tree-header,.tree-item,.tree-search-bar,footer { padding-left:16px; padding-right:16px }
+    .sidebar-section { padding:14px 16px }
+  }
+</style>
+</head>
+<body>
+
+<!-- SVG Sprites -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+</svg>
+
+<div id="app">
+  <header>
+    <div class="logo">
+      <span class="logo-text">share<em>is</em>care</span>
+    </div>
+    <div class="badge-admin">admin</div>
+  </header>
+
+  <div class="main-grid">
+    <div class="tree-panel">
+      <div class="tree-header">
+        <span>File Tree</span>
+        <div class="tree-header-actions">
+          <button class="tree-action" id="tree-toggle-all">Collapse all</button>
+          <span id="stats">--</span>
+        </div>
+      </div>
+      <div class="tree-search-bar">
+        <span class="tree-search-icon"><svg><use href="#i-search"/></svg></span>
+        <input type="text" id="tree-filter" placeholder="Filter tree…" autocomplete="off" spellcheck="false">
+      </div>
+      <ul class="tree-list" id="tree"></ul>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="section-title">Default Patterns</div>
+        <div class="toggle-row">
+          <span class="toggle-label">Enable sensitive-file defaults</span>
+          <div class="switch" id="defaults-toggle" tabindex="0" role="switch" aria-checked="true"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="flex:1">
+        <div class="section-title">Rules</div>
+        <div class="rules-scroll" id="rules-list"></div>
+        <div class="add-rule">
+          <input type="text" id="new-pattern" placeholder="*.pem, secrets/, etc.">
+          <button id="add-btn">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="count">--</span>
+    <a href="https://shareiscare.dev" target="_blank">shareiscare.dev</a>
+  </footer>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-msg" id="toast-msg"></span>
+  <button class="toast-undo" id="toast-undo">Undo</button>
+  <div class="toast-timer" id="toast-timer"></div>
+</div>
+
+<script>
+(function(){
+  var TOKEN = new URLSearchParams(location.search).get('token') || '';
+  var headers = {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN};
+
+  var treeEl      = document.getElementById('tree');
+  var rulesEl     = document.getElementById('rules-list');
+  var statsEl     = document.getElementById('stats');
+  var countEl     = document.getElementById('count');
+  var toggleEl    = document.getElementById('defaults-toggle');
+  var inputEl     = document.getElementById('new-pattern');
+  var addBtn      = document.getElementById('add-btn');
+  var treeFilterEl= document.getElementById('tree-filter');
+  var toggleAllBtn= document.getElementById('tree-toggle-all');
+
+  var toastEl     = document.getElementById('toast');
+  var toastMsgEl  = document.getElementById('toast-msg');
+  var toastTimerEl= document.getElementById('toast-timer');
+  var toastUndoEl = document.getElementById('toast-undo');
+
+  var defaultsEnabled = true;
+  var treeData = [];
+  var expandedPaths = new Set();
+  var allExpanded = true;
+  var treeFilterText = '';
+  var lastDeletedPattern = null;
+  var toastTimeout = null;
+
+  function api(method, path, body) {
+    var opts = {method:method, headers:headers};
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(path + (path.indexOf('?') === -1 ? '?' : '&') + 'token=' + TOKEN, opts)
+      .then(function(r){ return r.json(); });
+  }
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function highlightMatch(name, query) {
+    if (!query) return esc(name);
+    var lower = name.toLowerCase();
+    var idx = lower.indexOf(query.toLowerCase());
+    if (idx === -1) return esc(name);
+    return esc(name.substring(0, idx)) +
+      '<mark>' + esc(name.substring(idx, idx + query.length)) + '</mark>' +
+      esc(name.substring(idx + query.length));
+  }
+
+  /* ── Toast / Undo ── */
+  function showToast(message, undoPattern) {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    lastDeletedPattern = undoPattern;
+    toastMsgEl.textContent = message;
+    toastTimerEl.style.transition = 'none';
+    toastTimerEl.style.width = '100%';
+    toastEl.classList.add('visible');
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        toastTimerEl.style.transition = 'width 4s linear';
+        toastTimerEl.style.width = '0%';
+      });
+    });
+    toastTimeout = setTimeout(function() {
+      toastEl.classList.remove('visible');
+      lastDeletedPattern = null;
+      toastTimeout = null;
+    }, 4000);
+  }
+
+  function hideToast() {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastEl.classList.remove('visible');
+    toastTimeout = null;
+  }
+
+  toastUndoEl.addEventListener('click', function() {
+    if (lastDeletedPattern) {
+      var pattern = lastDeletedPattern;
+      hideToast();
+      api('POST','/__admin/api/rules',{pattern:pattern,action:'hide'}).then(function() {
+        lastDeletedPattern = null;
+        loadAll();
+      });
+    }
+  });
+
+  /* ── Rules ── */
+  function loadRules() {
+    api('GET','/__admin/api/rules').then(function(data){
+      defaultsEnabled = data.defaultsEnabled;
+      toggleEl.className = 'switch' + (defaultsEnabled ? ' on' : '');
+      toggleEl.setAttribute('aria-checked', defaultsEnabled ? 'true' : 'false');
+      renderRules(data.rules || []);
+    });
+  }
+
+  function renderRules(rules) {
+    if (!rules.length) {
+      rulesEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:14px 0">No rules defined</div>';
+      return;
+    }
+    rulesEl.innerHTML = rules.map(function(r){
+      var canDel = r.source === 'user';
+      return '<div class="rule-item">' +
+        '<span class="rule-pattern">' + esc(r.pattern) + '</span>' +
+        '<span class="rule-source ' + r.source + '">' + r.source + '</span>' +
+        (canDel ? '<button class="rule-del" data-pattern="' + esc(r.pattern) + '" title="Remove rule"><svg><use href="#i-x"/></svg></button>' : '') +
+        '</div>';
+    }).join('');
+
+    rulesEl.querySelectorAll('.rule-del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var pattern = btn.dataset.pattern;
+        api('DELETE','/__admin/api/rules',{pattern:pattern}).then(function(){
+          showToast('Rule \u201c' + pattern + '\u201d removed', pattern);
+          loadAll();
+        });
+      });
+    });
+  }
+
+  addBtn.addEventListener('click', function(){
+    var p = inputEl.value.trim();
+    if (!p) return;
+    api('POST','/__admin/api/rules',{pattern:p,action:'hide'}).then(function(){
+      inputEl.value = '';
+      loadAll();
+    });
+  });
+
+  inputEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') addBtn.click();
+  });
+
+  toggleEl.addEventListener('click', function(){
+    defaultsEnabled = !defaultsEnabled;
+    api('PUT','/__admin/api/defaults',{enabled:defaultsEnabled}).then(function(){ loadAll(); });
+  });
+  toggleEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleEl.click(); }
+  });
+
+  /* ── Tree ── */
+  function expandAll(entries, parentPath) {
+    entries.forEach(function(e) {
+      if (e.isDir) {
+        var path = parentPath ? parentPath + '/' + e.name : e.name;
+        expandedPaths.add(path);
+        if (e.children && e.children.length) expandAll(e.children, path);
+      }
+    });
+  }
+
+  function collapseAll() {
+    expandedPaths.clear();
+  }
+
+  toggleAllBtn.addEventListener('click', function() {
+    if (allExpanded) {
+      collapseAll();
+      allExpanded = false;
+      toggleAllBtn.textContent = 'Expand all';
+    } else {
+      expandAll(treeData, '');
+      allExpanded = true;
+      toggleAllBtn.textContent = 'Collapse all';
+    }
+    renderTreeView();
+  });
+
+  /* Tree search */
+  treeFilterEl.addEventListener('input', function() {
+    treeFilterText = treeFilterEl.value.trim().toLowerCase();
+    renderTreeView();
+  });
+
+  function flattenVisible(entries, parentPath, depth) {
+    var result = [];
+    entries.forEach(function(e) {
+      var path = parentPath ? parentPath + '/' + e.name : e.name;
+      var hasChildren = e.isDir && e.children && e.children.length > 0;
+      result.push({
+        name: e.name, isDir: e.isDir, hidden: e.hidden, hiddenBy: e.hiddenBy,
+        depth: depth, path: path, hasChildren: hasChildren
+      });
+      if (hasChildren && expandedPaths.has(path)) {
+        result = result.concat(flattenVisible(e.children, path, depth + 1));
+      }
+    });
+    return result;
+  }
+
+  function flattenFiltered(entries, parentPath, depth, query) {
+    var result = [];
+    entries.forEach(function(e) {
+      var path = parentPath ? parentPath + '/' + e.name : e.name;
+      var matches = e.name.toLowerCase().indexOf(query) !== -1;
+      var childResults = [];
+      if (e.isDir && e.children && e.children.length > 0) {
+        childResults = flattenFiltered(e.children, path, depth + 1, query);
+      }
+      if (matches || childResults.length > 0) {
+        result.push({
+          name: e.name, isDir: e.isDir, hidden: e.hidden, hiddenBy: e.hiddenBy,
+          depth: depth, path: path, hasChildren: e.isDir && e.children && e.children.length > 0
+        });
+        result = result.concat(childResults);
+      }
+    });
+    return result;
+  }
+
+  function loadTree() {
+    api('GET','/__admin/api/tree?path=/').then(function(data){
+      treeData = data.entries || [];
+      expandAll(treeData, '');
+      allExpanded = true;
+      toggleAllBtn.textContent = 'Collapse all';
+
+      var allFlat = flattenVisible(treeData, '', 0);
+      var hiddenCount = allFlat.filter(function(f){ return f.hidden; }).length;
+      var visibleCount = allFlat.length - hiddenCount;
+      statsEl.textContent = hiddenCount + ' hidden / ' + visibleCount + ' visible';
+      countEl.textContent = allFlat.length + ' total items';
+
+      renderTreeView();
+    });
+  }
+
+  function renderTreeView() {
+    var items;
+    if (treeFilterText) {
+      items = flattenFiltered(treeData, '', 0, treeFilterText);
+    } else {
+      items = flattenVisible(treeData, '', 0);
+    }
+    renderTree(items);
+  }
+
+  function renderTree(items) {
+    if (!items.length) {
+      var msg = treeFilterText ? 'No matches' : 'Empty directory';
+      treeEl.innerHTML = '<li style="padding:40px 48px;color:var(--muted);text-align:center;font-size:13px">' + msg + '</li>';
+      return;
+    }
+    treeEl.innerHTML = items.map(function(item) {
+      var indent = '';
+      for (var i = 0; i < item.depth; i++) indent += '<span class="tree-indent"></span>';
+
+      var isExpanded = expandedPaths.has(item.path);
+      var chevron = '';
+      if (item.isDir && item.hasChildren && !treeFilterText) {
+        chevron = '<button class="tree-chevron' + (isExpanded ? ' open' : '') + '" data-path="' + esc(item.path) + '" title="' + (isExpanded ? 'Collapse' : 'Expand') + '">&#x25B8;</button>';
+      } else {
+        chevron = '<span class="tree-chevron-space"></span>';
+      }
+
+      var iconHtml = item.isDir
+        ? '<span class="tree-icon"><svg><use href="#i-folder"/></svg></span>'
+        : '<span class="tree-icon"><svg><use href="#i-file"/></svg></span>';
+
+      var displayName = highlightMatch(item.name + (item.isDir ? '/' : ''), treeFilterText);
+      var badge = item.hiddenBy ? '<span class="tree-badge">' + esc(item.hiddenBy) + '</span>' : '';
+      var toggleLabel = item.hidden ? 'show' : 'hide';
+      var toggleCls = 'tree-toggle' + (item.hidden ? ' is-hidden' : '');
+      var toggleBtn = '<button class="' + toggleCls + '" data-name="' + esc(item.name) + '" data-isdir="' + item.isDir + '" data-hidden="' + item.hidden + '">' + toggleLabel + '</button>';
+      var rowCls = 'tree-item' + (item.hidden ? ' hidden-item' : '') + (item.isDir ? ' dir-item' : '');
+
+      return '<li class="' + rowCls + '">' +
+        indent + chevron + iconHtml +
+        '<span class="tree-name">' + displayName + '</span>' +
+        badge + toggleBtn + '</li>';
+    }).join('');
+
+    /* Chevron click handlers */
+    treeEl.querySelectorAll('.tree-chevron').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var path = btn.dataset.path;
+        if (expandedPaths.has(path)) {
+          expandedPaths.delete(path);
+        } else {
+          expandedPaths.add(path);
+        }
+        renderTreeView();
+      });
+    });
+
+    /* Toggle hide/show handlers */
+    treeEl.querySelectorAll('.tree-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var name = btn.dataset.name;
+        var isDir = btn.dataset.isdir === 'true';
+        var hidden = btn.dataset.hidden === 'true';
+        var pattern = isDir ? name + '/' : name;
+        if (hidden) {
+          api('DELETE','/__admin/api/rules',{pattern:pattern}).then(function(){
+            showToast('Rule \u201c' + pattern + '\u201d removed', pattern);
+            loadAll();
+          });
+        } else {
+          api('POST','/__admin/api/rules',{pattern:pattern,action:'hide'}).then(function(){ loadAll(); });
+        }
+      });
+    });
+  }
+
+  function loadAll() {
+    loadRules();
+    loadTree();
+  }
+
+  loadAll();
+})();
+</script>
+</body>
+</html>

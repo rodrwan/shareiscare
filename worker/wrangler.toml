@@ -1,0 +1,16 @@
+name = "shareiscare"
+main = "src/worker.js"
+compatibility_date = "2024-03-01"
+
+[durable_objects]
+bindings = [
+  { name = "TUNNEL", class_name = "TunnelDO" }
+]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["TunnelDO"]
+
+[[routes]]
+pattern = "*.shareiscare.dev/*"
+zone_name = "shareiscare.dev"

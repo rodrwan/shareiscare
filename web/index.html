@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>shareiscare — Share any folder to the internet</title>
+<meta name="description" content="One command. No cloudflared. No ngrok. Your files, your tunnel, your rules.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Google+Sans+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:      '#0c0c0c',
+        surface: '#131313',
+        border:  '#1f1f1f',
+        accent:  '#c8a96e',
+        green:   '#7c9e87',
+        text:    '#e5ddd0',
+        muted:   '#787878',
+        dim:     '#3a3a3a',
+      },
+      fontFamily: {
+        sans:  ['Google Sans', 'Segoe UI', 'sans-serif'],
+        mono:  ['Google Sans Mono', 'IBM Plex Mono', 'monospace'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+      },
+    },
+  },
+}
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: #0c0c0c; color: #e5ddd0; font-family: 'Google Sans', 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ── Grain overlay ── */
+  body::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity: .5;
+  }
+
+  /* ── Dot-grid background ── */
+  .dot-grid {
+    background-image: radial-gradient(circle, #1f1f1f 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes terminalLine {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .25; }
+  }
+  @keyframes cursorBlink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes shimmerLine {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  [data-reveal].visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .terminal-line {
+    opacity: 0;
+    animation: terminalLine 0.4s ease forwards;
+  }
+
+  .cursor-blink {
+    animation: cursorBlink 0.8s step-end infinite;
+  }
+
+  .dot-pulse {
+    animation: pulse 2.8s ease-in-out infinite;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1f1f1f; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+  /* ── Nav blur ── */
+  .nav-scrolled {
+    background: rgba(12, 12, 12, 0.85) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom-color: #1f1f1f !important;
+  }
+
+  /* ── Copy button ── */
+  .copy-btn { transition: all 0.15s ease; }
+  .copy-btn:hover { color: #c8a96e; }
+  .copy-btn.copied { color: #7c9e87; }
+
+  /* ── Step connector line (How It Works) ── */
+  .step-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-line-inner {
+    width: 1px;
+    height: 48px;
+    background: linear-gradient(180deg, transparent, #c8a96e 30%, #c8a96e 70%, transparent);
+    opacity: 0.35;
+  }
+  @media (min-width: 768px) {
+    .step-line {
+      margin-top: 28px; /* align with icon center */
+      padding: 0 4px;
+    }
+    .step-line-inner {
+      width: 100%;
+      min-width: 40px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c8a96e 30%, #c8a96e 70%, transparent);
+    }
+  }
+
+  /* ── Feature card hover ── */
+  .feature-card {
+    transition: border-color 0.25s ease, transform 0.25s ease;
+  }
+  .feature-card:hover {
+    border-color: #c8a96e;
+    transform: translateY(-2px);
+  }
+
+  /* ── Architecture flow boxes ── */
+  .arch-box {
+    border: 1px solid #1f1f1f;
+    background: #131313;
+    transition: border-color 0.25s ease;
+  }
+  .arch-box:hover {
+    border-color: #c8a96e;
+  }
+  .arch-arrow {
+    color: #3a3a3a;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- NAV                                              -->
+<!-- ════════════════════════════════════════════════ -->
+<nav id="nav" class="fixed top-0 left-0 right-0 z-50 border-b border-transparent transition-all duration-300">
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 h-16 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-3">
+      <span class="font-serif text-xl font-bold tracking-tight text-text">share<em class="italic text-accent">is</em>care</span>
+      <span class="hidden sm:flex items-center gap-2 text-[11px] text-muted tracking-widest uppercase border border-border rounded-full px-3 py-1">
+        <span class="w-[7px] h-[7px] rounded-full bg-green dot-pulse"></span>
+        live
+      </span>
+    </a>
+    <div class="flex items-center gap-4">
+      <a href="https://github.com/rodrwan/shareiscare_v2" target="_blank" rel="noopener"
+         class="text-sm text-muted hover:text-accent transition-colors duration-150 hidden sm:block">
+        GitHub
+      </a>
+      <a href="#get-started"
+         class="text-sm font-medium bg-accent text-bg px-5 py-2 rounded-full hover:opacity-90 transition-opacity duration-150">
+        Get Started
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- HERO                                             -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="relative min-h-screen flex items-center pt-16">
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 py-20 lg:py-0 w-full">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+      <!-- Left column -->
+      <div>
+        <span class="inline-block font-mono text-[11px] tracking-[0.2em] uppercase text-muted mb-6">Developer Tool</span>
+        <h1 class="font-serif text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.1] tracking-tight mb-6">
+          Share <em class="italic text-accent">any</em> folder<br>to the internet
+        </h1>
+        <p class="text-lg text-muted leading-relaxed max-w-lg mb-10">
+          One command. No cloudflared. No ngrok.<br class="hidden sm:block">
+          Your files, your tunnel, your rules.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="#get-started"
+             class="inline-flex items-center gap-2 bg-accent text-bg font-medium text-sm px-7 py-3 rounded-full hover:opacity-90 transition-opacity duration-150">
+            Get Started
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="https://github.com/rodrwan/shareiscare_v2" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-2 border border-border text-muted font-medium text-sm px-7 py-3 rounded-full hover:border-accent hover:text-accent transition-all duration-150">
+            View Source
+          </a>
+        </div>
+      </div>
+
+      <!-- Right column: Terminal mockup -->
+      <div class="relative">
+        <div class="bg-surface border border-border rounded-xl overflow-hidden shadow-2xl shadow-black/40">
+          <!-- Title bar -->
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+            <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+            <span class="flex-1 text-center text-[11px] text-dim tracking-wider font-mono">terminal</span>
+          </div>
+          <!-- Terminal body -->
+          <div class="p-5 font-mono text-sm leading-7 min-h-[220px]">
+            <div class="terminal-line" style="animation-delay: 0.2s">
+              <span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--dir</span> <span class="text-text">./my-project</span>
+            </div>
+            <div class="terminal-line mt-4" style="animation-delay: 0.8s">
+              <span>&#x1f4c1;</span> <span class="text-muted">Sharing:</span> <span class="text-text">/Users/you/my-project</span>
+            </div>
+            <div class="terminal-line" style="animation-delay: 1.2s">
+              <span>&#x1f30d;</span> <span class="text-muted">Public:</span>  <span class="text-accent">https://a1b2c3.shareiscare.dev</span>
+            </div>
+            <div class="terminal-line" style="animation-delay: 1.6s">
+              <span>&#x1f510;</span> <span class="text-muted">Admin:</span>  <span class="text-dim">http://127.0.0.1:9898?token=f3a1...</span>
+            </div>
+            <div class="terminal-line" style="animation-delay: 2.0s">
+              <span>&#x2705;</span> <span class="text-green">Tunnel connected</span>
+            </div>
+            <div class="terminal-line mt-2" style="animation-delay: 2.4s">
+              <span class="text-muted">$</span> <span class="cursor-blink text-accent">&#x2588;</span>
+            </div>
+          </div>
+        </div>
+        <!-- Glow effect behind terminal -->
+        <div class="absolute -inset-4 -z-10 bg-accent/[0.03] rounded-3xl blur-2xl"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- HOW IT WORKS                                     -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="py-24 lg:py-32" data-reveal>
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+    <div class="text-center mb-16">
+      <span class="inline-block font-mono text-[11px] tracking-[0.2em] uppercase text-muted mb-4">How It Works</span>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">Three steps, zero friction</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-6 md:gap-0 md:items-start items-center">
+      <!-- Step 1 -->
+      <div class="text-center px-4" data-reveal>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-surface border border-border mb-5">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <h3 class="font-serif text-xl font-bold mb-3">Run</h3>
+        <p class="text-sm text-muted leading-relaxed">Start the binary. A unique URL is generated instantly.</p>
+      </div>
+
+      <!-- Connector 1→2 -->
+      <div class="step-line px-2" data-reveal>
+        <div class="step-line-inner"></div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center px-4" data-reveal>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-surface border border-border mb-5">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <h3 class="font-serif text-xl font-bold mb-3">Share</h3>
+        <p class="text-sm text-muted leading-relaxed">Send the URL. Files served through Cloudflare's edge.</p>
+      </div>
+
+      <!-- Connector 2→3 -->
+      <div class="step-line px-2" data-reveal>
+        <div class="step-line-inner"></div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center px-4" data-reveal>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-surface border border-border mb-5">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3 class="font-serif text-xl font-bold mb-3">Control</h3>
+        <p class="text-sm text-muted leading-relaxed">Hide sensitive files with gitignore-style patterns.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FEATURES                                         -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="py-24 lg:py-32 border-t border-border" data-reveal>
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+    <div class="text-center mb-16">
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">Built for developers</h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <!-- Zero Config -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">Zero Config</h3>
+        <p class="text-sm text-muted leading-relaxed">One command, instant URL, no accounts. Just run it and share.</p>
+      </div>
+
+      <!-- Privacy Rules -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">Privacy Rules</h3>
+        <p class="text-sm text-muted leading-relaxed">Gitignore-style patterns. <code class="text-dim font-mono text-xs">.env</code>, <code class="text-dim font-mono text-xs">.git</code>, and keys blocked by default.</p>
+      </div>
+
+      <!-- Admin Panel -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">Admin Panel</h3>
+        <p class="text-sm text-muted leading-relaxed">Local web UI to toggle files, manage visibility rules, all in real time.</p>
+      </div>
+
+      <!-- ZIP Downloads -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8"/><rect x="1" y="3" width="22" height="5" rx="1"/><line x1="10" y1="12" x2="14" y2="12"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">ZIP Downloads</h3>
+        <p class="text-sm text-muted leading-relaxed">Download entire folders as ZIP archives. Respects all visibility rules.</p>
+      </div>
+
+      <!-- Auto Reconnect -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">Auto Reconnect</h3>
+        <p class="text-sm text-muted leading-relaxed">Exponential backoff on disconnect. Your URL stays the same.</p>
+      </div>
+
+      <!-- No Cloudflared -->
+      <div class="feature-card bg-surface border border-border rounded-xl p-6" data-reveal>
+        <div class="mb-4">
+          <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+          </svg>
+        </div>
+        <h3 class="font-bold text-base mb-2">No Cloudflared</h3>
+        <p class="text-sm text-muted leading-relaxed">Direct WebSocket tunnel to Cloudflare's edge. No third-party daemon needed.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- CLI REFERENCE                                    -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="get-started" class="py-24 lg:py-32 border-t border-border" data-reveal>
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+    <div class="text-center mb-16">
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">Get started in seconds</h2>
+    </div>
+
+    <!-- Terminal: Usage examples -->
+    <div class="bg-surface border border-border rounded-xl overflow-hidden mb-8 max-w-3xl mx-auto" data-reveal>
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+          <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+        </div>
+        <button class="copy-btn text-dim hover:text-accent transition-colors p-1" data-copy="go install github.com/rodrwan/shareiscare_v2/cmd/shareiscare@latest" title="Copy to clipboard">
+          <svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg class="w-4 h-4 check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-5 font-mono text-sm leading-7">
+        <div class="text-muted mb-1"># Install</div>
+        <div><span class="text-muted">$</span> <span class="text-text">go install github.com/rodrwan/shareiscare_v2/cmd/shareiscare@latest</span></div>
+        <div class="mt-4 text-muted mb-1"># Share current directory</div>
+        <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span></div>
+        <div class="mt-4 text-muted mb-1"># Share a specific folder with a custom hash</div>
+        <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--hash</span> <span class="text-text">myfiles</span> <span class="text-accent">--dir</span> <span class="text-text">./public</span></div>
+      </div>
+    </div>
+
+    <!-- Flags table -->
+    <div class="max-w-3xl mx-auto" data-reveal>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border text-left">
+              <th class="py-3 pr-6 font-mono text-[11px] tracking-wider uppercase text-muted font-normal">Flag</th>
+              <th class="py-3 pr-6 font-mono text-[11px] tracking-wider uppercase text-muted font-normal">Default</th>
+              <th class="py-3 font-mono text-[11px] tracking-wider uppercase text-muted font-normal">Description</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono text-[13px]">
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--hash</td>
+              <td class="py-3 pr-6 text-dim">auto (6-char hex)</td>
+              <td class="py-3 text-muted font-sans">Subdomain hash for your URL</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--dir</td>
+              <td class="py-3 pr-6 text-dim">.</td>
+              <td class="py-3 text-muted font-sans">Directory to share</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--admin-port</td>
+              <td class="py-3 pr-6 text-dim">9898</td>
+              <td class="py-3 text-muted font-sans">Admin panel port</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--no-admin</td>
+              <td class="py-3 pr-6 text-dim">false</td>
+              <td class="py-3 text-muted font-sans">Disable admin panel</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--no-defaults</td>
+              <td class="py-3 pr-6 text-dim">false</td>
+              <td class="py-3 text-muted font-sans">Don't seed default sensitive patterns</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-6 text-accent">--max-zip</td>
+              <td class="py-3 pr-6 text-dim">100 MB</td>
+              <td class="py-3 text-muted font-sans">Max total size for ZIP downloads</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE                                     -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="py-24 lg:py-32 border-t border-border dot-grid" data-reveal>
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+    <div class="text-center mb-16">
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">How it works under the hood</h2>
+    </div>
+
+    <!-- Flow diagram -->
+    <div class="flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-6 mb-12" data-reveal>
+
+      <!-- Browser -->
+      <div class="arch-box rounded-xl px-6 py-4 text-center min-w-[160px]">
+        <div class="text-accent mb-1">
+          <svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+          </svg>
+        </div>
+        <div class="font-mono text-sm text-text">Browser</div>
+        <div class="text-[11px] text-dim mt-1">User request</div>
+      </div>
+
+      <div class="arch-arrow font-mono text-lg hidden lg:block">&#x2192;&#x2192;&#x2192;</div>
+      <div class="arch-arrow font-mono text-lg lg:hidden">&#x2193;</div>
+
+      <!-- Cloudflare Edge -->
+      <div class="arch-box rounded-xl px-6 py-4 text-center min-w-[220px] border-accent/30">
+        <div class="text-accent mb-1">
+          <svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+          </svg>
+        </div>
+        <div class="font-mono text-sm text-text">Cloudflare Edge</div>
+        <div class="text-[11px] text-dim mt-1">Worker + Durable Object</div>
+      </div>
+
+      <div class="arch-arrow font-mono text-xs hidden lg:flex items-center gap-1">
+        &#x2190; <span class="text-accent text-[11px]">WebSocket</span> &#x2192;
+      </div>
+      <div class="arch-arrow font-mono text-xs lg:hidden flex items-center gap-1">
+        &#x2191; <span class="text-accent text-[11px]">WebSocket</span> &#x2193;
+      </div>
+
+      <!-- Your Machine -->
+      <div class="arch-box rounded-xl px-6 py-4 text-center min-w-[200px]">
+        <div class="text-accent mb-1">
+          <svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <div class="font-mono text-sm text-text">Your Machine</div>
+        <div class="text-[11px] text-dim mt-1">Go binary (shareHandler)</div>
+      </div>
+
+    </div>
+
+    <p class="text-center text-sm text-muted max-w-2xl mx-auto leading-relaxed" data-reveal>
+      Requests are routed by subdomain hash to a Durable Object, which holds a persistent WebSocket connection
+      to your local Go binary. HTTP requests and responses are serialized as JSON with base64 bodies over the
+      WebSocket&mdash;no port forwarding, no daemon, no configuration.
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FOOTER                                           -->
+<!-- ════════════════════════════════════════════════ -->
+<footer class="border-t border-border py-8">
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="font-serif text-base font-bold tracking-tight text-text">share<em class="italic text-accent">is</em>care</span>
+      <span class="text-[12px] text-dim">&copy; 2025</span>
+    </div>
+    <div class="flex items-center gap-6 text-sm text-muted">
+      <a href="https://github.com/rodrwan/shareiscare_v2" target="_blank" rel="noopener" class="hover:text-accent transition-colors duration-150">GitHub</a>
+      <a href="https://github.com/rodrwan/shareiscare_v2/blob/main/LICENSE" target="_blank" rel="noopener" class="hover:text-accent transition-colors duration-150">MIT License</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                       -->
+<!-- ════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ── Intersection Observer for scroll reveals ── */
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('[data-reveal]').forEach(function(el) {
+    observer.observe(el);
+  });
+
+  /* ── Nav background on scroll ── */
+  var nav = document.getElementById('nav');
+  var scrolled = false;
+  window.addEventListener('scroll', function() {
+    var isScrolled = window.scrollY > 40;
+    if (isScrolled !== scrolled) {
+      scrolled = isScrolled;
+      nav.classList.toggle('nav-scrolled', isScrolled);
+    }
+  }, { passive: true });
+
+  /* ── Smooth scroll for anchor links ── */
+  document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var href = link.getAttribute('href');
+      if (href === '#') return;
+      var target = document.querySelector(href);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  /* ── Copy-to-clipboard on code blocks ── */
+  document.querySelectorAll('.copy-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var text = btn.getAttribute('data-copy');
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(function() {
+        var copyIcon = btn.querySelector('.copy-icon');
+        var checkIcon = btn.querySelector('.check-icon');
+        btn.classList.add('copied');
+        copyIcon.classList.add('hidden');
+        checkIcon.classList.remove('hidden');
+        setTimeout(function() {
+          btn.classList.remove('copied');
+          copyIcon.classList.remove('hidden');
+          checkIcon.classList.add('hidden');
+        }, 2000);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
