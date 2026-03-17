@@ -26,18 +26,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// version se inyecta en build-time via ldflags.
+// version is injected at build-time via ldflags.
 var version = "dev"
 
 //go:embed index.html
 var indexHTML []byte
 
-// isWithinRoot verifica que path esté dentro de root (evita el anti-patrón de HasPrefix sin separador).
+// isWithinRoot checks that path is within root (avoids the HasPrefix anti-pattern without separator).
 func isWithinRoot(path, root string) bool {
 	return path == root || strings.HasPrefix(path, root+string(filepath.Separator))
 }
 
-// sanitizeFilename limpia nombres de archivo para uso seguro en headers HTTP.
+// sanitizeFilename cleans filenames for safe use in HTTP headers.
 func sanitizeFilename(name string) string {
 	return strings.Map(func(r rune) rune {
 		if r == '"' || r == '\\' || r == '/' || r < 32 {
@@ -47,7 +47,7 @@ func sanitizeFilename(name string) string {
 	}, name)
 }
 
-// hasDotfileSegment retorna true si algún segmento del path comienza con punto.
+// hasDotfileSegment returns true if any path segment starts with a dot.
 func hasDotfileSegment(relPath string) bool {
 	for _, part := range strings.Split(filepath.ToSlash(relPath), "/") {
 		if part != "." && strings.HasPrefix(part, ".") {
@@ -57,7 +57,7 @@ func hasDotfileSegment(relPath string) bool {
 	return false
 }
 
-// resolveAndCheck resuelve symlinks y verifica que el path resultante esté dentro de root.
+// resolveAndCheck resolves symlinks and verifies the resulting path is within root.
 func resolveAndCheck(path, root string) (string, error) {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
@@ -73,40 +73,40 @@ func resolveAndCheck(path, root string) (string, error) {
 	return resolved, nil
 }
 
-// resolveIdentity determina qué hash y secret usar según flags y valores persistidos.
+// resolveIdentity determines which hash and secret to use based on flags and persisted values.
 func resolveIdentity(flagHash string, forceNew bool, persistedHash, persistedSecret string) (hash, secret string, changed bool) {
-	// --new-hash: siempre generar ambos.
+	// --new-hash: always generate both.
 	if forceNew {
 		return generateHash(), generateToken(), true
 	}
 
-	// --hash proporcionado.
+	// --hash provided.
 	if flagHash != "" {
 		if flagHash == persistedHash && persistedSecret != "" {
-			// Mismo hash que el persistido, reusar secret.
+			// Same hash as persisted, reuse secret.
 			return flagHash, persistedSecret, false
 		}
-		// Hash distinto o sin secret persistido: generar secret nuevo.
+		// Different hash or no persisted secret: generate new secret.
 		return flagHash, generateToken(), true
 	}
 
-	// Sin flags: usar persistidos si existen.
+	// No flags: use persisted values if they exist.
 	if persistedHash != "" && persistedSecret != "" {
 		return persistedHash, persistedSecret, false
 	}
 
-	// Sin nada persistido: generar ambos.
+	// Nothing persisted: generate both.
 	return generateHash(), generateToken(), true
 }
 
-// generateHash genera un hash aleatorio de 16 caracteres hex.
+// generateHash generates a random 16-character hex hash.
 func generateHash() string {
 	b := make([]byte, 8)
 	crypto_rand.Read(b)
 	return hex.EncodeToString(b)
 }
 
-// validateHash verifica que el hash sea válido (4-64 chars, solo [a-z0-9]).
+// validateHash checks that the hash is valid (4-64 chars, only [a-z0-9]).
 func validateHash(hash string) error {
 	if len(hash) < 4 || len(hash) > 64 {
 		return fmt.Errorf("hash must be 4-64 characters, got %d", len(hash))
@@ -119,7 +119,7 @@ func validateHash(hash string) error {
 	return nil
 }
 
-// bandwidthTracker controla el ancho de banda diario consumido.
+// bandwidthTracker tracks daily bandwidth consumption.
 type bandwidthTracker struct {
 	mu    sync.Mutex
 	date  string // "2006-01-02"
@@ -127,7 +127,7 @@ type bandwidthTracker struct {
 	limit int64
 }
 
-// Reserve intenta reservar n bytes. Retorna false si se excede el límite diario.
+// Reserve attempts to reserve n bytes. Returns false if the daily limit is exceeded.
 func (bt *bandwidthTracker) Reserve(n int64) bool {
 	bt.mu.Lock()
 	defer bt.mu.Unlock()
@@ -164,11 +164,11 @@ func main() {
 
 	absDir, err := filepath.Abs(*dir)
 	if err != nil {
-		log.Fatalf("directorio inválido: %v", err)
+		log.Fatalf("invalid directory: %v", err)
 	}
 	absDir, err = filepath.EvalSymlinks(absDir)
 	if err != nil {
-		log.Fatalf("directorio inválido (symlink): %v", err)
+		log.Fatalf("invalid directory (symlink): %v", err)
 	}
 
 	// Rules engine.
@@ -181,19 +181,19 @@ func main() {
 		log.Fatalf("rules engine: %v", err)
 	}
 
-	// Resolver identidad del túnel (hash + secret).
+	// Resolve tunnel identity (hash + secret).
 	persistedHash, persistedSecret := rules.TunnelIdentity()
 	resolvedHash, tunnelSecret, changed := resolveIdentity(strings.ToLower(*hash), *newHash, persistedHash, persistedSecret)
 	if err := validateHash(resolvedHash); err != nil {
-		log.Fatalf("hash inválido: %v", err)
+		log.Fatalf("invalid hash: %v", err)
 	}
 	if changed {
 		if err := rules.SetTunnelIdentity(resolvedHash, tunnelSecret); err != nil {
-			log.Fatalf("error persistiendo identidad: %v", err)
+			log.Fatalf("error persisting identity: %v", err)
 		}
 	}
 
-	// Bandwidth tracker (opcional).
+	// Bandwidth tracker (optional).
 	var bw *bandwidthTracker
 	if *maxBW > 0 {
 		bw = &bandwidthTracker{limit: *maxBW * 1024 * 1024}
@@ -251,7 +251,7 @@ type fileEntry struct {
 	Ext     string `json:"ext"`
 }
 
-// setSecurityHeaders agrega headers de seguridad a todas las respuestas públicas.
+// setSecurityHeaders adds security headers to all public responses.
 func setSecurityHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "DENY")
@@ -261,7 +261,7 @@ func setSecurityHeaders(w http.ResponseWriter) {
 func (h *shareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
 
-	// Autenticación por password (HTTP Basic Auth).
+	// Password authentication (HTTP Basic Auth).
 	if h.password != "" {
 		_, pass, ok := r.BasicAuth()
 		if !ok || pass != h.password {
@@ -298,7 +298,7 @@ func (h *shareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Resolver symlinks y verificar que no escapen de root.
+	// Resolve symlinks and verify they don't escape root.
 	resolved, err := resolveAndCheck(absPath, h.root)
 	if err != nil {
 		http.NotFound(w, r)
@@ -324,7 +324,7 @@ func (h *shareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Control de ancho de banda diario.
+	// Daily bandwidth control.
 	if h.bandwidth != nil && !h.bandwidth.Reserve(info.Size()) {
 		http.Error(w, "bandwidth limit exceeded", http.StatusTooManyRequests)
 		return
@@ -358,7 +358,7 @@ func (h *shareHandler) apiLs(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
-		// Verificar symlinks no escapen de root.
+		// Verify symlinks don't escape root.
 		entryPath := filepath.Join(absPath, e.Name())
 		if _, err := resolveAndCheck(entryPath, h.root); err != nil {
 			continue
@@ -406,26 +406,26 @@ func sizeOf(info fs.FileInfo) int64 {
 	return info.Size()
 }
 
-// walkEntry representa un archivo recopilado para ZIP.
+// walkEntry represents a file collected for ZIP.
 type walkEntry struct {
 	absPath string
 	relPath string
 	size    int64
 }
 
-// collectFiles recorre recursivamente un directorio, respetando reglas de visibilidad.
+// collectFiles recursively walks a directory, respecting visibility rules.
 func (h *shareHandler) collectFiles(absDir string) ([]walkEntry, int64, error) {
 	var entries []walkEntry
 	var totalSize int64
 
 	err := filepath.Walk(absDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil // saltar archivos inaccesibles
+			return nil // skip inaccessible files
 		}
 
 		name := info.Name()
 
-		// Saltar dotfiles.
+		// Skip dotfiles.
 		if strings.HasPrefix(name, ".") {
 			if info.IsDir() {
 				return filepath.SkipDir
@@ -435,7 +435,7 @@ func (h *shareHandler) collectFiles(absDir string) ([]walkEntry, int64, error) {
 
 		relPath, _ := filepath.Rel(h.root, path)
 
-		// Verificar reglas de visibilidad.
+		// Check visibility rules.
 		if h.rules.IsHidden(relPath, info.IsDir()) {
 			if info.IsDir() {
 				return filepath.SkipDir
@@ -443,8 +443,8 @@ func (h *shareHandler) collectFiles(absDir string) ([]walkEntry, int64, error) {
 			return nil
 		}
 
-		// Resolver symlinks a archivos y verificar que no escapen de root.
-		// Nota: filepath.Walk no sigue symlinks a directorios (los omite).
+		// Resolve file symlinks and verify they don't escape root.
+		// Note: filepath.Walk does not follow directory symlinks (it skips them).
 		if info.Mode()&os.ModeSymlink != 0 {
 			resolved, err := filepath.EvalSymlinks(path)
 			if err != nil {
@@ -464,7 +464,7 @@ func (h *shareHandler) collectFiles(absDir string) ([]walkEntry, int64, error) {
 			return nil
 		}
 
-		// Ruta relativa dentro del ZIP: usar nombre del directorio como raíz.
+		// Relative path inside ZIP: use directory name as root.
 		zipRel, _ := filepath.Rel(absDir, path)
 		folderName := filepath.Base(absDir)
 		zipPath := filepath.Join(folderName, zipRel)
@@ -502,7 +502,7 @@ func (h *shareHandler) apiZipInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verificar que el directorio no esté oculto.
+	// Verify the directory is not hidden.
 	relPath, _ := filepath.Rel(h.root, absPath)
 	if h.rules.IsPathOrAncestorHidden(relPath, true) {
 		http.NotFound(w, r)
@@ -526,7 +526,7 @@ func (h *shareHandler) apiZipInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *shareHandler) apiZip(w http.ResponseWriter, r *http.Request) {
-	// Limitar descargas ZIP concurrentes para proteger memoria.
+	// Limit concurrent ZIP downloads to protect memory.
 	select {
 	case h.zipSem <- struct{}{}:
 		defer func() { <-h.zipSem }()
@@ -576,7 +576,7 @@ func (h *shareHandler) apiZip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Control de ancho de banda diario para ZIP.
+	// Daily bandwidth control for ZIP.
 	if h.bandwidth != nil && !h.bandwidth.Reserve(totalSize) {
 		http.Error(w, "bandwidth limit exceeded", http.StatusTooManyRequests)
 		return
@@ -592,7 +592,7 @@ func (h *shareHandler) apiZip(w http.ResponseWriter, r *http.Request) {
 			Modified: time.Now(),
 		}
 
-		// Intentar preservar mod time real.
+		// Try to preserve actual mod time.
 		if fi, err := os.Stat(f.absPath); err == nil {
 			fh.Modified = fi.ModTime()
 		}
@@ -619,7 +619,7 @@ func (h *shareHandler) apiZip(w http.ResponseWriter, r *http.Request) {
 	w.Write(buf.Bytes())
 }
 
-// copyFileToZip copia un archivo al writer del ZIP, limitando al tamaño esperado.
+// copyFileToZip copies a file to the ZIP writer, limiting to the expected size.
 func copyFileToZip(w io.Writer, path string, maxBytes int64) error {
 	f, err := os.Open(path)
 	if err != nil {
@@ -668,7 +668,7 @@ func runTunnel(hash, secret string, handler http.Handler) {
 		conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 		if err != nil {
 			jitter := time.Duration(rand.Int64N(int64(delay) / 2))
-			log.Printf("tunnel: connect failed: %v — retry en %v", err, delay+jitter)
+			log.Printf("tunnel: connect failed: %v — retrying in %v", err, delay+jitter)
 			time.Sleep(delay + jitter)
 			if delay < 60*time.Second {
 				delay *= 2

@@ -75,4 +75,4 @@ Requests are serialized as JSON with base64 bodies over WebSocket. The Go client
 
 ## Language
 
-Code comments and log messages are in Spanish. UI text is in English.
+All code (comments, log messages, error strings) and UI text are in English.

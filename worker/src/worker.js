@@ -1,14 +1,14 @@
 // shareiscare — Cloudflare Worker + Durable Object
-// Usa WebSocket Hibernation API para evitar cargos de duración cuando está idle.
+// Uses WebSocket Hibernation API to avoid duration charges when idle.
 //
-// Protecciones:
-//   - Rate limit por IP (configurable via RATE_LIMIT_RPM)
-//   - Validación de hash (solo [a-z0-9]{4,64})
-//   - Límite de body size en requests (configurable via MAX_REQUEST_BODY_MB)
-//   - Límite de tunnels activos (configurable via MAX_TUNNELS, usa registry DO)
-//   - Tiempo de cleanup configurable (via CLEANUP_HOURS)
+// Protections:
+//   - Rate limit per IP (configurable via RATE_LIMIT_RPM)
+//   - Hash validation (only [a-z0-9]{4,64})
+//   - Request body size limit (configurable via MAX_REQUEST_BODY_MB)
+//   - Active tunnel limit (configurable via MAX_TUNNELS, uses registry DO)
+//   - Configurable cleanup time (via CLEANUP_HOURS)
 
-// ── Defaults (sobreescribibles via env vars en wrangler.toml) ────────────────
+// ── Defaults (overridable via env vars in wrangler.toml) ─────────────────────
 const DEFAULTS = {
   RATE_LIMIT_RPM: 60,
   MAX_REQUEST_BODY_MB: 10,
@@ -16,7 +16,7 @@ const DEFAULTS = {
   CLEANUP_HOURS: 24,
 };
 
-// ── Rate limiter (best-effort, en memoria del isolate) ──────────────────────
+// ── Rate limiter (best-effort, in-memory per isolate) ────────────────────────
 const rateLimits = new Map();
 
 function checkRateLimit(ip, maxRpm) {
@@ -27,7 +27,7 @@ function checkRateLimit(ip, maxRpm) {
     rateLimits.set(ip, entry);
   }
   entry.count++;
-  // Evictar entradas viejas cuando el mapa crece demasiado.
+  // Evict stale entries when the map grows too large.
   if (rateLimits.size > 10_000) {
     for (const [k, v] of rateLimits) {
       if (now > v.resetAt) rateLimits.delete(k);
@@ -36,10 +36,10 @@ function checkRateLimit(ip, maxRpm) {
   return entry.count <= maxRpm;
 }
 
-// ── Validación de hash ──────────────────────────────────────────────────────
+// ── Hash validation ──────────────────────────────────────────────────────────
 const HASH_RE = /^[a-z0-9]{4,64}$/;
 
-// ── Utilidad para base64 seguro con bodies grandes ──────────────────────────
+// ── Utility for safe base64 encoding with large bodies ───────────────────────
 function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   let str = "";
@@ -60,7 +60,7 @@ export class TunnelDO {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // ── Registry API (interno, solo DO-to-DO) ─────────────────────────────
+    // ── Registry API (internal, DO-to-DO only) ───────────────────────────
     if (url.pathname === "/__registry/check") {
       return this.#registryCheck();
     }
@@ -78,7 +78,7 @@ export class TunnelDO {
     return this.#handleBrowserRequest(request, url);
   }
 
-  // ── Registry: controla límite de tunnels activos ──────────────────────────
+  // ── Registry: controls active tunnel limit ─────────────────────────────
   async #registryCheck() {
     const count = (await this.state.storage.get("activeTunnels")) || 0;
     const max = parseInt(this.env.MAX_TUNNELS) || DEFAULTS.MAX_TUNNELS;
@@ -97,7 +97,7 @@ export class TunnelDO {
     return new Response("ok");
   }
 
-  // ── Cliente local se conecta ─────────────────────────────────────────────
+  // ── Local client connects ──────────────────────────────────────────────
   async #handleClientConnect(request) {
     const url = new URL(request.url);
     const secret = url.searchParams.get("secret");
@@ -106,13 +106,13 @@ export class TunnelDO {
       return new Response("secret required", { status: 401 });
     }
 
-    // Cargar o almacenar secreto de forma durable.
+    // Load or store secret durably.
     const stored = await this.state.storage.get("tunnelSecret");
     if (stored && stored !== secret) {
       return new Response("invalid secret", { status: 403 });
     }
     if (!stored) {
-      // Tunnel nuevo — verificar límite via registry DO.
+      // New tunnel — check limit via registry DO.
       const registryId = this.env.TUNNEL.idFromName("__registry__");
       const registry = this.env.TUNNEL.get(registryId);
       const res = await registry.fetch(new Request("https://internal/__registry/check"));
@@ -122,16 +122,16 @@ export class TunnelDO {
       await this.state.storage.put("tunnelSecret", secret);
     }
 
-    // Cancelar alarm de limpieza si hay uno pendiente (el cliente reconectó a tiempo).
+    // Cancel cleanup alarm if pending (client reconnected in time).
     await this.state.storage.deleteAlarm();
 
-    // Cerrar conexiones previas (permite reconexión limpia del mismo cliente).
+    // Close existing connections (allows clean reconnection from the same client).
     const existing = this.state.getWebSockets("tunnel");
     for (const ws of existing) {
       try { ws.close(1000, "replaced"); } catch (_) {}
     }
 
-    // Limpiar pending de conexiones anteriores.
+    // Clear pending requests from previous connections.
     for (const [, p] of this.pending) {
       clearTimeout(p.timer);
       p.reject(new Error("tunnel replaced"));
@@ -143,13 +143,13 @@ export class TunnelDO {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  // ── Browser HTTP → proxy al cliente ─────────────────────────────────────
+  // ── Browser HTTP → proxy to client ─────────────────────────────────────
   async #handleBrowserRequest(request, url) {
     const tunnelSockets = this.state.getWebSockets("tunnel");
 
     if (tunnelSockets.length === 0) {
       return new Response(
-        "No hay cliente conectado. Corre shareiscare en tu máquina local.",
+        "No client connected. Run shareiscare on your local machine.",
         { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } }
       );
     }
@@ -158,7 +158,7 @@ export class TunnelDO {
     const id      = crypto.randomUUID();
     const body    = await request.arrayBuffer();
 
-    // Límite de tamaño de request body.
+    // Request body size limit.
     const maxBodyMB = parseInt(this.env.MAX_REQUEST_BODY_MB) || DEFAULTS.MAX_REQUEST_BODY_MB;
     const maxBody = maxBodyMB * 1024 * 1024;
     if (body.byteLength > maxBody) {
@@ -206,8 +206,8 @@ export class TunnelDO {
     });
   }
 
-  // ── Hibernation handlers ─────────────────────────────────────────────────
-  // El runtime invoca estos métodos despertando el DO solo el tiempo necesario.
+  // ── Hibernation handlers ───────────────────────────────────────────────
+  // The runtime invokes these methods, waking the DO only as long as needed.
 
   webSocketMessage(ws, data) {
     try {
@@ -236,7 +236,7 @@ export class TunnelDO {
     this.pending.clear();
     try { ws.close(code, reason); } catch (_) {}
 
-    // Programar limpieza si nadie reconecta.
+    // Schedule cleanup if no one reconnects.
     this.#scheduleCleanup();
   }
 
@@ -247,17 +247,17 @@ export class TunnelDO {
     }
     this.pending.clear();
 
-    // Programar limpieza si nadie reconecta.
+    // Schedule cleanup if no one reconnects.
     this.#scheduleCleanup();
   }
 
-  // ── Auto-limpieza de DOs huérfanos ────────────────────────────────────────
-  // Si el alarm se dispara, significa que nadie reconectó a tiempo.
-  // Decrementar el registry y borrar storage para garbage collection del DO.
+  // ── Auto-cleanup of orphan DOs ─────────────────────────────────────────
+  // If the alarm fires, it means no one reconnected in time.
+  // Decrement the registry and delete storage for DO garbage collection.
   async alarm() {
     const tunnelSockets = this.state.getWebSockets("tunnel");
     if (tunnelSockets.length === 0) {
-      // Notificar al registry antes de limpiar.
+      // Notify the registry before cleaning up.
       try {
         const registryId = this.env.TUNNEL.idFromName("__registry__");
         const registry = this.env.TUNNEL.get(registryId);
@@ -276,12 +276,12 @@ export default {
 
     if (!hash || hash === "shareiscare") {
       return new Response(
-        "Especifica un subdominio: https://<hash>.shareiscare.dev",
+        "Specify a subdomain: https://<hash>.shareiscare.dev",
         { status: 400, headers: { "Content-Type": "text/plain" } }
       );
     }
 
-    // Validar formato del hash.
+    // Validate hash format.
     if (!HASH_RE.test(hash)) {
       return new Response(
         "Invalid hash: must be 4-64 lowercase alphanumeric characters",
@@ -289,7 +289,7 @@ export default {
       );
     }
 
-    // Rate limit por IP.
+    // Rate limit per IP.
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
     const maxRpm = parseInt(env.RATE_LIMIT_RPM) || DEFAULTS.RATE_LIMIT_RPM;
     if (!checkRateLimit(ip, maxRpm)) {

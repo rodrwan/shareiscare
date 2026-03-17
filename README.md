@@ -6,12 +6,12 @@
 **Your files, your tunnel, your rules.**
 
 ```
-Browser → *.shareiscare.dev → Cloudflare Worker (Durable Object) ←WebSocket→ tu máquina
+Browser → *.shareiscare.dev → Cloudflare Worker (Durable Object) ←WebSocket→ your machine
 ```
 
 ---
 
-## Instalación
+## Installation
 
 ### Homebrew
 
@@ -19,7 +19,7 @@ Browser → *.shareiscare.dev → Cloudflare Worker (Durable Object) ←WebSocke
 brew install rodrwan/tap/shareiscare
 ```
 
-### Desde source
+### From source
 
 ```bash
 git clone https://github.com/rodrwan/shareiscare.git
@@ -27,25 +27,25 @@ cd shareiscare
 make build    # → ./bin/shareiscare
 ```
 
-El binario es self-contained — las UIs están embebidas via `go:embed`.
+The binary is self-contained — UIs are embedded via `go:embed`.
 
 ---
 
 ## Quick Start
 
 ```bash
-# Compartir el directorio actual
+# Share the current directory
 shareiscare
 
-# Compartir una carpeta específica con hash personalizado
-shareiscare --hash miproyecto --dir ./dist
+# Share a specific folder with a custom hash
+shareiscare --hash myproject --dir ./dist
 
-# Con password y límite de ancho de banda
-shareiscare --password secreto123 --max-bandwidth 1024
+# With password and bandwidth limit
+shareiscare --password secret123 --max-bandwidth 1024
 ```
 
 ```
-📁 Sharing: /Users/rod/proyectos/mi-app
+📁 Sharing: /Users/rod/projects/my-app
 🌍 Public:  https://a1b2c3d4e5f67890.shareiscare.dev
 🔐 Admin:   http://127.0.0.1:9898?token=f3a1b2c3...
 🔒 Password protection enabled
@@ -53,77 +53,77 @@ shareiscare --password secreto123 --max-bandwidth 1024
 ✅ Tunnel connected
 ```
 
-La URL es **estable entre reinicios** — el hash y el tunnel secret se persisten en `.shareiscare.json`. Para forzar una URL nueva: `shareiscare --new-hash`.
+The URL is **stable across restarts** — the hash and tunnel secret are persisted in `.shareiscare.json`. To force a new URL: `shareiscare --new-hash`.
 
 ---
 
 ## Flags
 
-| Flag | Default | Descripción |
+| Flag | Default | Description |
 |------|---------|-------------|
-| `--hash` | auto (16-char hex) | Hash del subdominio para tu URL |
-| `--new-hash` | `false` | Forzar hash y URL nuevos |
-| `--dir` | `.` | Directorio a compartir |
-| `--password` | — | Password para acceso público (HTTP Basic Auth) |
-| `--max-bandwidth` | `0` (ilimitado) | Límite de ancho de banda diario en MB |
-| `--admin-port` | `9898` | Puerto del panel de administración |
-| `--config` | `<dir>/.shareiscare.json` | Path al archivo de configuración |
-| `--no-admin` | `false` | Desactivar panel de administración |
-| `--no-defaults` | `false` | No sembrar patrones sensibles por defecto |
-| `--max-zip` | `100` MB | Tamaño máximo para descargas ZIP |
-| `--version` | — | Imprimir versión y salir |
+| `--hash` | auto (16-char hex) | Subdomain hash for your URL |
+| `--new-hash` | `false` | Force a new hash and URL |
+| `--dir` | `.` | Directory to share |
+| `--password` | — | Password for public access (HTTP Basic Auth) |
+| `--max-bandwidth` | `0` (unlimited) | Daily bandwidth limit in MB |
+| `--admin-port` | `9898` | Admin panel port |
+| `--config` | `<dir>/.shareiscare.json` | Path to config file |
+| `--no-admin` | `false` | Disable admin panel |
+| `--no-defaults` | `false` | Don't seed default sensitive patterns |
+| `--max-zip` | `100` MB | Max size for ZIP downloads |
+| `--version` | — | Print version and exit |
 
 ---
 
-## Panel de administración
+## Admin Panel
 
-shareiscare levanta un servidor admin local en `127.0.0.1:9898` (solo accesible desde tu máquina) protegido con un token auto-generado.
+shareiscare starts a local admin server on `127.0.0.1:9898` (only accessible from your machine) protected with an auto-generated token.
 
-Desde ahí puedes:
+From there you can:
 
-- **Ocultar/mostrar archivos** con patrones tipo gitignore (ej. `*.log`, `secrets/`)
-- **Activar/desactivar patrones por defecto** (`.env`, `.git/`, `*.key`, `*.pem`, `node_modules/`, etc.)
-- **Visualizar el árbol** de archivos con su estado de visibilidad
+- **Hide/show files** with gitignore-style patterns (e.g. `*.log`, `secrets/`)
+- **Enable/disable default patterns** (`.env`, `.git/`, `*.key`, `*.pem`, `node_modules/`, etc.)
+- **View the file tree** with visibility status
 
-Las reglas se persisten en `.shareiscare.json`.
+Rules are persisted in `.shareiscare.json`.
 
 ### API
 
-| Endpoint | Método | Descripción |
+| Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/__admin/api/rules` | `GET` | Listar reglas |
-| `/__admin/api/rules` | `POST` | Agregar regla |
-| `/__admin/api/rules` | `DELETE` | Eliminar regla |
-| `/__admin/api/defaults` | `GET` / `PUT` | Consultar/togglear patrones por defecto |
-| `/__admin/api/tree` | `GET` | Árbol completo con visibilidad |
+| `/__admin/api/rules` | `GET` | List rules |
+| `/__admin/api/rules` | `POST` | Add rule |
+| `/__admin/api/rules` | `DELETE` | Remove rule |
+| `/__admin/api/defaults` | `GET` / `PUT` | Query/toggle default patterns |
+| `/__admin/api/tree` | `GET` | Full tree with visibility |
 
-Auth via `?token=<token>` o `Authorization: Bearer <token>`.
+Auth via `?token=<token>` or `Authorization: Bearer <token>`.
 
 ---
 
-## Seguridad y protecciones
+## Security & Protections
 
-### Protección de archivos (cliente Go)
+### File Protection (Go client)
 
-- **Patrones sensibles por defecto**: `.env`, `.git/`, `*.key`, `*.pem`, `*.sqlite`, `credentials`, etc. — ocultos automáticamente al arrancar
-- **Dotfiles**: nunca se sirven
-- **Symlinks**: se valida que no escapen del directorio raíz
-- **404 en vez de 403**: los archivos ocultos retornan 404 para no filtrar su existencia
-- **Headers de seguridad**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, CSP
+- **Default sensitive patterns**: `.env`, `.git/`, `*.key`, `*.pem`, `*.sqlite`, `credentials`, etc. — automatically hidden on startup
+- **Dotfiles**: never served
+- **Symlinks**: validated to not escape the root directory
+- **404 instead of 403**: hidden files return 404 to avoid leaking their existence
+- **Security headers**: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, CSP
 
-### Protección de la cuenta Cloudflare (Worker)
+### Cloudflare Account Protection (Worker)
 
-| Protección | Variable (`wrangler.toml`) | Default |
+| Protection | Variable (`wrangler.toml`) | Default |
 |-----------|---------------------------|---------|
-| Rate limit por IP | `RATE_LIMIT_RPM` | 60 req/min |
-| Validación de hash | — | `[a-z0-9]{4,64}` |
-| Límite de request body | `MAX_REQUEST_BODY_MB` | 100 MB |
-| Límite de tunnels activos | `MAX_TUNNELS` | 50 |
-| Limpieza de DOs huérfanos | `CLEANUP_HOURS` | 24 h |
+| Rate limit per IP | `RATE_LIMIT_RPM` | 60 req/min |
+| Hash validation | — | `[a-z0-9]{4,64}` |
+| Request body limit | `MAX_REQUEST_BODY_MB` | 100 MB |
+| Active tunnel limit | `MAX_TUNNELS` | 50 |
+| Orphan DO cleanup | `CLEANUP_HOURS` | 24 h |
 
-El límite de tunnels usa un **registry DO** interno que mantiene un contador atómico. Cuando un DO se limpia por inactividad, decrementa el contador automáticamente.
+The tunnel limit uses an internal **registry DO** that maintains an atomic counter. When a DO is cleaned up due to inactivity, the counter is decremented automatically.
 
-Todos los valores son configurables en `worker/wrangler.toml`:
+All values are configurable in `worker/wrangler.toml`:
 
 ```toml
 [vars]
@@ -133,74 +133,74 @@ RATE_LIMIT_RPM = "60"
 CLEANUP_HOURS = "24"
 ```
 
-### Protecciones opcionales (flags)
+### Optional Protections (flags)
 
-| Protección | Flag |
+| Protection | Flag |
 |-----------|------|
 | Password (HTTP Basic Auth) | `--password` |
-| Límite de ancho de banda diario | `--max-bandwidth` |
+| Daily bandwidth limit | `--max-bandwidth` |
 
 ---
 
-## Arquitectura
+## Architecture
 
 ```
 ┌─────────────┐        ┌──────────────────────────────┐
 │   Browser   │  HTTPS  │  Cloudflare Edge             │
-│  (visitante)│ ──────▶ │  Worker → TunnelDO (por hash)│
+│  (visitor)  │ ──────▶ │  Worker → TunnelDO (by hash) │
 └─────────────┘        └──────────────┬───────────────┘
                                       │ WebSocket (wss://)
                        ┌──────────────▼───────────────┐
-                       │  shareiscare (binario Go)    │
+                       │  shareiscare (Go binary)     │
                        │                              │
-                       │  shareHandler  → archivos    │
-                       │  adminHandler  → reglas      │
-                       │  RulesEngine   → visibilidad │
+                       │  shareHandler  → files       │
+                       │  adminHandler  → rules       │
+                       │  RulesEngine   → visibility  │
                        └──────────────────────────────┘
 ```
 
-### Flujo de una request
+### Request Flow
 
-1. Browser pide `https://miHash.shareiscare.dev/docs/`
-2. Worker valida hash + rate limit, serializa la request a JSON (body en base64)
-3. Durable Object reenvía por WebSocket al cliente Go
-4. `shareHandler` verifica password, reglas y bandwidth, sirve el archivo **en memoria**
-5. Respuesta viaja de vuelta por WebSocket → Worker → Browser
+1. Browser requests `https://myHash.shareiscare.dev/docs/`
+2. Worker validates hash + rate limit, serializes the request to JSON (body in base64)
+3. Durable Object forwards via WebSocket to the Go client
+4. `shareHandler` checks password, rules and bandwidth, serves the file **in memory**
+5. Response travels back via WebSocket → Worker → Browser
 
-### Por qué Durable Objects
+### Why Durable Objects
 
-Un Worker normal es stateless — no puede mantener un WebSocket entre requests. Los Durable Objects son instancias con estado en el edge: cada hash mapea a un DO único que mantiene el WebSocket y el mapa de requests pendientes. Usa la **WebSocket Hibernation API** para que el DO duerma entre mensajes y solo consuma CPU durante actividad real.
+A regular Worker is stateless — it can't maintain a WebSocket across requests. Durable Objects are stateful instances at the edge: each hash maps to a unique DO that maintains the WebSocket and the pending request map. It uses the **WebSocket Hibernation API** so the DO sleeps between messages and only consumes CPU during actual activity.
 
 ---
 
 ## Self-hosting
 
-Para usar tu propio dominio en vez de `shareiscare.dev`:
+To use your own domain instead of `shareiscare.dev`:
 
-### 1. Setup del Worker
+### 1. Worker Setup
 
 ```bash
 npm install -g wrangler
 wrangler login
 ```
 
-Edita `worker/wrangler.toml`:
+Edit `worker/wrangler.toml`:
 
 ```toml
 [[routes]]
-pattern = "*.tudominio.com/*"
-zone_name = "tudominio.com"
+pattern = "*.yourdomain.com/*"
+zone_name = "yourdomain.com"
 ```
 
-### 2. DNS wildcard
+### 2. Wildcard DNS
 
-En Cloudflare Dashboard → tu zona → DNS:
+In Cloudflare Dashboard → your zone → DNS:
 
 | Type | Name | Address | Proxy |
 |------|------|---------|-------|
 | A | * | 192.0.2.1 | Proxied |
 
-(La IP es un placeholder — el Worker intercepta antes)
+(The IP is a placeholder — the Worker intercepts first)
 
 ### 3. Deploy
 
@@ -208,45 +208,45 @@ En Cloudflare Dashboard → tu zona → DNS:
 make deploy
 ```
 
-### 4. Actualizar dominio en el cliente
+### 4. Update domain in the client
 
-En `cmd/shareiscare/main.go`, reemplaza `shareiscare.dev` por tu dominio y recompila con `make build`.
+In `cmd/shareiscare/main.go`, replace `shareiscare.dev` with your domain and recompile with `make build`.
 
 ---
 
-## Desarrollo
+## Development
 
 ```bash
-make build              # Compilar → ./bin/shareiscare
-make run                # Build + run (directorio actual)
-make run-hash HASH=abc  # Run con hash específico
+make build              # Compile → ./bin/shareiscare
+make run                # Build + run (current directory)
+make run-hash HASH=abc  # Run with specific hash
 make vet                # go vet
 make test               # Tests
-make deploy             # Deploy Worker a Cloudflare
-make dev                # Worker en modo dev local
+make deploy             # Deploy Worker to Cloudflare
+make dev                # Worker in local dev mode
 ```
 
 ### Releases
 
-Se publican automáticamente via [GoReleaser](https://goreleaser.com/) al pushear un tag `v*`. El CI corre tests, genera binarios para darwin/linux (amd64/arm64), y publica la formula a [rodrwan/homebrew-tap](https://github.com/rodrwan/homebrew-tap).
+Published automatically via [GoReleaser](https://goreleaser.com/) when pushing a `v*` tag. CI runs tests, generates binaries for darwin/linux (amd64/arm64), and publishes the formula to [rodrwan/homebrew-tap](https://github.com/rodrwan/homebrew-tap).
 
 ---
 
 ## Troubleshooting
 
-| Error | Causa | Solución |
+| Error | Cause | Solution |
 |-------|-------|----------|
-| `tunnel: connect failed: no such host` | Worker no desplegado o DNS wildcard faltante | `dig +short @1.1.1.1 test.tudominio.com` |
-| `503 No hay cliente conectado` | Binario Go no está corriendo | Iniciar `shareiscare` |
-| `429 Rate limit exceeded` | Demasiadas requests desde tu IP | Esperar 60s o ajustar `RATE_LIMIT_RPM` |
-| `429 tunnel limit reached` | Límite de tunnels activos alcanzado | Ajustar `MAX_TUNNELS` |
-| `403 invalid secret` | Secret del DO no coincide | Usar `--new-hash` o esperar cleanup |
-| `hash inválido` | Hash no cumple `[a-z0-9]{4,64}` | Usar solo minúsculas y dígitos |
-| `Durable Objects not supported` | Plan gratuito de Workers | Activar Workers Paid (~$5/mes) |
-| Wildcard DNS no funciona | Registro DNS en modo DNS-only | Cambiar a **Proxied** (nube naranja) |
+| `tunnel: connect failed: no such host` | Worker not deployed or wildcard DNS missing | `dig +short @1.1.1.1 test.yourdomain.com` |
+| `503 No client connected` | Go binary is not running | Start `shareiscare` |
+| `429 Rate limit exceeded` | Too many requests from your IP | Wait 60s or adjust `RATE_LIMIT_RPM` |
+| `429 tunnel limit reached` | Active tunnel limit reached | Adjust `MAX_TUNNELS` |
+| `403 invalid secret` | DO secret mismatch | Use `--new-hash` or wait for cleanup |
+| `invalid hash` | Hash doesn't match `[a-z0-9]{4,64}` | Use only lowercase letters and digits |
+| `Durable Objects not supported` | Free Workers plan | Enable Workers Paid (~$5/month) |
+| Wildcard DNS not working | DNS record in DNS-only mode | Switch to **Proxied** (orange cloud) |
 
 ---
 
-## Licencia
+## License
 
 MIT

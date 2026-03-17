@@ -66,7 +66,7 @@ func TestSanitizeFilename(t *testing.T) {
 func TestResponseRecorderOverflow(t *testing.T) {
 	rec := &responseRecorder{header: make(http.Header), code: 200}
 
-	// Escribir justo bajo el límite debería funcionar.
+	// Writing just under the limit should work.
 	chunk := make([]byte, 1024)
 	for i := 0; i < 100; i++ {
 		n, err := rec.Write(chunk)
@@ -81,7 +81,7 @@ func TestResponseRecorderOverflow(t *testing.T) {
 		t.Error("should not overflow at 100KB")
 	}
 
-	// Forzar overflow escribiendo un bloque enorme.
+	// Force overflow by writing a huge block.
 	huge := make([]byte, maxResponseBody+1)
 	rec2 := &responseRecorder{header: make(http.Header), code: 200}
 	rec2.Write(huge)
@@ -117,16 +117,16 @@ func TestResolveIdentity(t *testing.T) {
 		forceNew        bool
 		persistedHash   string
 		persistedSecret string
-		wantHash        string // vacío = verificar que no esté vacío
+		wantHash        string // empty = verify it's not empty
 		wantSecret      string
 		wantChanged     bool
 	}{
 		{
-			name:        "sin flags ni persistido genera ambos",
+			name:        "no flags and no persisted generates both",
 			wantChanged: true,
 		},
 		{
-			name:            "reutiliza persistidos",
+			name:            "reuses persisted values",
 			persistedHash:   "abc123",
 			persistedSecret: "secret456",
 			wantHash:        "abc123",
@@ -134,7 +134,7 @@ func TestResolveIdentity(t *testing.T) {
 			wantChanged:     false,
 		},
 		{
-			name:            "flag hash igual al persistido reutiliza secret",
+			name:            "flag hash equal to persisted reuses secret",
 			flagHash:        "abc123",
 			persistedHash:   "abc123",
 			persistedSecret: "secret456",
@@ -143,7 +143,7 @@ func TestResolveIdentity(t *testing.T) {
 			wantChanged:     false,
 		},
 		{
-			name:            "flag hash distinto genera secret nuevo",
+			name:            "different flag hash generates new secret",
 			flagHash:        "newhash",
 			persistedHash:   "abc123",
 			persistedSecret: "secret456",
@@ -151,7 +151,7 @@ func TestResolveIdentity(t *testing.T) {
 			wantChanged:     true,
 		},
 		{
-			name:            "force new ignora persistidos",
+			name:            "force new ignores persisted",
 			forceNew:        true,
 			persistedHash:   "abc123",
 			persistedSecret: "secret456",
@@ -178,7 +178,7 @@ func TestResolveIdentity(t *testing.T) {
 			if tt.wantSecret != "" && secret != tt.wantSecret {
 				t.Errorf("secret = %q, want %q", secret, tt.wantSecret)
 			}
-			// force new y flag hash distinto deben generar secret diferente al persistido.
+			// force new and different flag hash must generate a secret different from persisted.
 			if tt.wantChanged && tt.persistedSecret != "" && tt.wantSecret == "" && secret == tt.persistedSecret {
 				t.Error("expected a new secret, got the persisted one")
 			}
@@ -190,7 +190,7 @@ func TestTunnelIdentityPersistence(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, ".shareiscare.json")
 
-	// Crear engine, setear identidad.
+	// Create engine, set identity.
 	re, err := NewRulesEngine(cfgPath, false)
 	if err != nil {
 		t.Fatalf("NewRulesEngine: %v", err)
@@ -199,7 +199,7 @@ func TestTunnelIdentityPersistence(t *testing.T) {
 		t.Fatalf("SetTunnelIdentity: %v", err)
 	}
 
-	// Recrear desde el mismo archivo.
+	// Recreate from the same file.
 	re2, err := NewRulesEngine(cfgPath, false)
 	if err != nil {
 		t.Fatalf("NewRulesEngine (reload): %v", err)
@@ -214,7 +214,7 @@ func TestTunnelIdentityBackwardCompat(t *testing.T) {
 	dir := t.TempDir()
 	cfgPath := filepath.Join(dir, ".shareiscare.json")
 
-	// Escribir JSON sin campos hash/tunnelSecret (formato antiguo).
+	// Write JSON without hash/tunnelSecret fields (old format).
 	old := map[string]any{
 		"version":                1,
 		"defaultPatternsEnabled": true,
@@ -242,12 +242,12 @@ func TestValidateHash(t *testing.T) {
 	}{
 		{"abcd1234", false},
 		{"abcdefghijklmnop", false},
-		{"abc", true},                      // demasiado corto
-		{"ABCD1234", true},                 // mayúsculas
-		{"abcd-1234", true},                // guión
-		{"abcd_1234", true},                // guión bajo
-		{strings.Repeat("a", 65), true},    // demasiado largo
-		{strings.Repeat("a", 64), false},   // justo en el límite
+		{"abc", true},                      // too short
+		{"ABCD1234", true},                 // uppercase
+		{"abcd-1234", true},                // hyphen
+		{"abcd_1234", true},                // underscore
+		{strings.Repeat("a", 65), true},    // too long
+		{strings.Repeat("a", 64), false},   // just at the limit
 		{"1234", false},                    // mínimo 4 chars
 	}
 	for _, tt := range tests {
@@ -280,7 +280,7 @@ func testDir(t *testing.T) string {
 }
 
 func TestBandwidthTrackerUnlimited(t *testing.T) {
-	// Cuando bandwidth es nil, no se bloquea nada (verificar que el handler no crashea).
+	// When bandwidth is nil, nothing is blocked (verify the handler doesn't crash).
 	dir := testDir(t)
 	os.WriteFile(filepath.Join(dir, "test.txt"), []byte("hello"), 0644)
 	cfgPath := filepath.Join(dir, ".shareiscare.json")
@@ -304,7 +304,7 @@ func TestPasswordAuth(t *testing.T) {
 
 	h := newShareHandler(dir, rules, 100*1024*1024, "secret123", nil)
 
-	// Sin auth → 401.
+	// No auth → 401.
 	req := httptest.NewRequest("GET", "/test.txt", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -315,7 +315,7 @@ func TestPasswordAuth(t *testing.T) {
 		t.Error("expected WWW-Authenticate header")
 	}
 
-	// Password incorrecto → 401.
+	// Wrong password → 401.
 	req = httptest.NewRequest("GET", "/test.txt", nil)
 	req.SetBasicAuth("user", "wrongpass")
 	rec = httptest.NewRecorder()
@@ -324,7 +324,7 @@ func TestPasswordAuth(t *testing.T) {
 		t.Errorf("expected 401 with wrong password, got %d", rec.Code)
 	}
 
-	// Password correcto → 200.
+	// Correct password → 200.
 	req = httptest.NewRequest("GET", "/test.txt", nil)
 	req.SetBasicAuth("user", "secret123")
 	rec = httptest.NewRecorder()
@@ -340,7 +340,7 @@ func TestPasswordAuthDisabled(t *testing.T) {
 	cfgPath := filepath.Join(dir, ".shareiscare.json")
 	rules, _ := NewRulesEngine(cfgPath, false)
 
-	// Sin password → acceso libre.
+	// No password → open access.
 	h := newShareHandler(dir, rules, 100*1024*1024, "", nil)
 
 	req := httptest.NewRequest("GET", "/test.txt", nil)
