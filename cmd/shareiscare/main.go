@@ -26,6 +26,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// version se inyecta en build-time via ldflags.
+var version = "dev"
+
 //go:embed index.html
 var indexHTML []byte
 
@@ -70,7 +73,78 @@ func resolveAndCheck(path, root string) (string, error) {
 	return resolved, nil
 }
 
+// resolveIdentity determina qué hash y secret usar según flags y valores persistidos.
+func resolveIdentity(flagHash string, forceNew bool, persistedHash, persistedSecret string) (hash, secret string, changed bool) {
+	// --new-hash: siempre generar ambos.
+	if forceNew {
+		return generateHash(), generateToken(), true
+	}
+
+	// --hash proporcionado.
+	if flagHash != "" {
+		if flagHash == persistedHash && persistedSecret != "" {
+			// Mismo hash que el persistido, reusar secret.
+			return flagHash, persistedSecret, false
+		}
+		// Hash distinto o sin secret persistido: generar secret nuevo.
+		return flagHash, generateToken(), true
+	}
+
+	// Sin flags: usar persistidos si existen.
+	if persistedHash != "" && persistedSecret != "" {
+		return persistedHash, persistedSecret, false
+	}
+
+	// Sin nada persistido: generar ambos.
+	return generateHash(), generateToken(), true
+}
+
+// generateHash genera un hash aleatorio de 16 caracteres hex.
+func generateHash() string {
+	b := make([]byte, 8)
+	crypto_rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+// validateHash verifica que el hash sea válido (4-64 chars, solo [a-z0-9]).
+func validateHash(hash string) error {
+	if len(hash) < 4 || len(hash) > 64 {
+		return fmt.Errorf("hash must be 4-64 characters, got %d", len(hash))
+	}
+	for _, r := range hash {
+		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')) {
+			return fmt.Errorf("hash must contain only lowercase letters and digits, got %q", string(r))
+		}
+	}
+	return nil
+}
+
+// bandwidthTracker controla el ancho de banda diario consumido.
+type bandwidthTracker struct {
+	mu    sync.Mutex
+	date  string // "2006-01-02"
+	used  int64
+	limit int64
+}
+
+// Reserve intenta reservar n bytes. Retorna false si se excede el límite diario.
+func (bt *bandwidthTracker) Reserve(n int64) bool {
+	bt.mu.Lock()
+	defer bt.mu.Unlock()
+	today := time.Now().Format("2006-01-02")
+	if bt.date != today {
+		bt.date = today
+		bt.used = 0
+	}
+	if bt.used+n > bt.limit {
+		return false
+	}
+	bt.used += n
+	return true
+}
+
 func main() {
+	showVersion := flag.Bool("version", false, "print version and exit")
 	hash := flag.String("hash", "", "subdomain hash (auto-generated if omitted)")
 	dir := flag.String("dir", ".", "directory to share")
 	adminPort := flag.String("admin-port", "9898", "admin panel port")
@@ -78,12 +152,14 @@ func main() {
 	noAdmin := flag.Bool("no-admin", false, "disable admin panel")
 	noDefaults := flag.Bool("no-defaults", false, "don't seed default sensitive patterns")
 	maxZip := flag.Int64("max-zip", 100*1024*1024, "max total size for ZIP downloads in bytes")
+	newHash := flag.Bool("new-hash", false, "force a new hash and URL, ignoring persisted values")
+	password := flag.String("password", "", "require password for public access (HTTP Basic Auth)")
+	maxBW := flag.Int64("max-bandwidth", 0, "max daily bandwidth in MB (0 = unlimited)")
 	flag.Parse()
 
-	if *hash == "" {
-		b := make([]byte, 8)
-		crypto_rand.Read(b)
-		*hash = hex.EncodeToString(b)
+	if *showVersion {
+		fmt.Println("shareiscare", version)
+		os.Exit(0)
 	}
 
 	absDir, err := filepath.Abs(*dir)
@@ -105,12 +181,35 @@ func main() {
 		log.Fatalf("rules engine: %v", err)
 	}
 
-	tunnelSecret := generateToken()
-	handler := newShareHandler(absDir, rules, *maxZip)
-	go runTunnel(*hash, tunnelSecret, handler)
+	// Resolver identidad del túnel (hash + secret).
+	persistedHash, persistedSecret := rules.TunnelIdentity()
+	resolvedHash, tunnelSecret, changed := resolveIdentity(strings.ToLower(*hash), *newHash, persistedHash, persistedSecret)
+	if err := validateHash(resolvedHash); err != nil {
+		log.Fatalf("hash inválido: %v", err)
+	}
+	if changed {
+		if err := rules.SetTunnelIdentity(resolvedHash, tunnelSecret); err != nil {
+			log.Fatalf("error persistiendo identidad: %v", err)
+		}
+	}
+
+	// Bandwidth tracker (opcional).
+	var bw *bandwidthTracker
+	if *maxBW > 0 {
+		bw = &bandwidthTracker{limit: *maxBW * 1024 * 1024}
+	}
+
+	handler := newShareHandler(absDir, rules, *maxZip, *password, bw)
+	go runTunnel(resolvedHash, tunnelSecret, handler)
 
 	log.Printf("📁 Sharing: %s", absDir)
-	log.Printf("🌍 Public:  https://%s.shareiscare.dev", *hash)
+	log.Printf("🌍 Public:  https://%s.shareiscare.dev", resolvedHash)
+	if *password != "" {
+		log.Printf("🔒 Password protection enabled")
+	}
+	if *maxBW > 0 {
+		log.Printf("📊 Daily bandwidth limit: %d MB", *maxBW)
+	}
 
 	// Admin server.
 	if !*noAdmin {
@@ -129,14 +228,19 @@ func main() {
 }
 
 type shareHandler struct {
-	root   string
-	rules  *RulesEngine
-	maxZip int64
-	zipSem chan struct{}
+	root      string
+	rules     *RulesEngine
+	maxZip    int64
+	zipSem    chan struct{}
+	password  string
+	bandwidth *bandwidthTracker
 }
 
-func newShareHandler(root string, rules *RulesEngine, maxZip int64) *shareHandler {
-	return &shareHandler{root: root, rules: rules, maxZip: maxZip, zipSem: make(chan struct{}, 3)}
+func newShareHandler(root string, rules *RulesEngine, maxZip int64, password string, bw *bandwidthTracker) *shareHandler {
+	return &shareHandler{
+		root: root, rules: rules, maxZip: maxZip,
+		zipSem: make(chan struct{}, 3), password: password, bandwidth: bw,
+	}
 }
 
 type fileEntry struct {
@@ -156,6 +260,16 @@ func setSecurityHeaders(w http.ResponseWriter) {
 
 func (h *shareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	setSecurityHeaders(w)
+
+	// Autenticación por password (HTTP Basic Auth).
+	if h.password != "" {
+		_, pass, ok := r.BasicAuth()
+		if !ok || pass != h.password {
+			w.Header().Set("WWW-Authenticate", `Basic realm="shareiscare"`)
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+	}
 
 	if r.URL.Path == "/__api/zip-info" {
 		h.apiZipInfo(w, r)
@@ -207,6 +321,12 @@ func (h *shareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; img-src data:; connect-src 'self'")
 		w.Write(indexHTML)
+		return
+	}
+
+	// Control de ancho de banda diario.
+	if h.bandwidth != nil && !h.bandwidth.Reserve(info.Size()) {
+		http.Error(w, "bandwidth limit exceeded", http.StatusTooManyRequests)
 		return
 	}
 
@@ -453,6 +573,12 @@ func (h *shareHandler) apiZip(w http.ResponseWriter, r *http.Request) {
 
 	if totalSize > h.maxZip {
 		http.Error(w, fmt.Sprintf("total size %d exceeds max %d", totalSize, h.maxZip), 413)
+		return
+	}
+
+	// Control de ancho de banda diario para ZIP.
+	if h.bandwidth != nil && !h.bandwidth.Reserve(totalSize) {
+		http.Error(w, "bandwidth limit exceeded", http.StatusTooManyRequests)
 		return
 	}
 

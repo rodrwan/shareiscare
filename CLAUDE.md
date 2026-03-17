@@ -60,12 +60,17 @@ Requests are serialized as JSON with base64 bodies over WebSocket. The Go client
 ## CLI Flags
 
 ```
---hash          Subdomain hash (auto-generated 6-char hex if omitted)
+--version       Print version and exit
+--hash          Subdomain hash (auto-generated 16-char hex if omitted)
 --dir           Directory to share (default: ".")
 --admin-port    Admin panel port (default: "9898")
 --config        Path to .shareiscare.json (default: <dir>/.shareiscare.json)
 --no-admin      Disable admin panel
 --no-defaults   Don't seed default sensitive patterns
+--max-zip       Max total size for ZIP downloads in bytes (default: 100MB)
+--new-hash      Force a new hash and URL, ignoring persisted values
+--password      Require password for public access (HTTP Basic Auth)
+--max-bandwidth Max daily bandwidth in MB (0 = unlimited, default: 0)
 ```
 
 ## Language

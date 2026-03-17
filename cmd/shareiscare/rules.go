@@ -30,6 +30,8 @@ type RulesConfig struct {
 	Version                int    `json:"version"`
 	DefaultPatternsEnabled bool   `json:"defaultPatternsEnabled"`
 	Rules                  []Rule `json:"rules"`
+	Hash                   string `json:"hash,omitempty"`
+	TunnelSecret           string `json:"tunnelSecret,omitempty"`
 }
 
 type RulesEngine struct {
@@ -175,6 +177,22 @@ func (re *RulesEngine) SetDefaultsEnabled(enabled bool) error {
 	defer re.mu.Unlock()
 
 	re.config.DefaultPatternsEnabled = enabled
+	return re.save()
+}
+
+// TunnelIdentity returns the persisted hash and tunnel secret.
+func (re *RulesEngine) TunnelIdentity() (hash, secret string) {
+	re.mu.RLock()
+	defer re.mu.RUnlock()
+	return re.config.Hash, re.config.TunnelSecret
+}
+
+// SetTunnelIdentity persists hash and tunnel secret to config.
+func (re *RulesEngine) SetTunnelIdentity(hash, secret string) error {
+	re.mu.Lock()
+	defer re.mu.Unlock()
+	re.config.Hash = hash
+	re.config.TunnelSecret = secret
 	return re.save()
 }
 

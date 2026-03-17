@@ -117,6 +117,17 @@ tailwind.config = {
   .copy-btn:hover { color: #c8a96e; }
   .copy-btn.copied { color: #7c9e87; }
 
+  /* ── Install tabs ── */
+  .install-tab { cursor: pointer; }
+  .install-tab.active {
+    background: #131313;
+    color: #c8a96e;
+    border-color: #1f1f1f;
+  }
+  .install-tab:not(.active) {
+    border-color: transparent;
+  }
+
   /* ── Step connector line (How It Works) ── */
   .step-line {
     display: flex;
@@ -181,6 +192,10 @@ tailwind.config = {
       </span>
     </a>
     <div class="flex items-center gap-4">
+      <a href="#self-hosting"
+         class="text-sm text-muted hover:text-accent transition-colors duration-150 hidden sm:block">
+        Self-Hosting
+      </a>
       <a href="https://github.com/rodrwan/shareiscare" target="_blank" rel="noopener"
          class="text-sm text-muted hover:text-accent transition-colors duration-150 hidden sm:block">
         GitHub
@@ -242,7 +257,7 @@ tailwind.config = {
               <span>&#x1f4c1;</span> <span class="text-muted">Sharing:</span> <span class="text-text">/Users/you/my-project</span>
             </div>
             <div class="terminal-line" style="animation-delay: 1.2s">
-              <span>&#x1f30d;</span> <span class="text-muted">Public:</span>  <span class="text-accent">https://a1b2c3.shareiscare.dev</span>
+              <span>&#x1f30d;</span> <span class="text-muted">Public:</span>  <span class="text-accent">https://a1b2c3d4e5f6a7b8.shareiscare.dev</span>
             </div>
             <div class="terminal-line" style="animation-delay: 1.6s">
               <span>&#x1f510;</span> <span class="text-muted">Admin:</span>  <span class="text-dim">http://127.0.0.1:9898?token=f3a1...</span>
@@ -413,30 +428,95 @@ tailwind.config = {
       <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">Get started in seconds</h2>
     </div>
 
-    <!-- Terminal: Usage examples -->
-    <div class="bg-surface border border-border rounded-xl overflow-hidden mb-8 max-w-3xl mx-auto" data-reveal>
-      <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
-          <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
-          <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
-        </div>
-        <button class="copy-btn text-dim hover:text-accent transition-colors p-1" data-copy="go install github.com/rodrwan/shareiscare/cmd/shareiscare@latest" title="Copy to clipboard">
-          <svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-          <svg class="w-4 h-4 check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </button>
+    <!-- Install method tabs -->
+    <div class="max-w-3xl mx-auto mb-8" data-reveal>
+      <div class="flex gap-1 mb-0">
+        <button id="tab-brew" class="install-tab active font-mono text-[12px] tracking-wider uppercase px-5 py-2.5 rounded-t-lg border border-b-0 border-border bg-surface text-accent transition-all duration-150" onclick="switchTab('brew')">Homebrew</button>
+        <button id="tab-go" class="install-tab font-mono text-[12px] tracking-wider uppercase px-5 py-2.5 rounded-t-lg border border-b-0 border-transparent bg-transparent text-muted hover:text-text transition-all duration-150" onclick="switchTab('go')">Go Install</button>
+        <button id="tab-releases" class="install-tab font-mono text-[12px] tracking-wider uppercase px-5 py-2.5 rounded-t-lg border border-b-0 border-transparent bg-transparent text-muted hover:text-text transition-all duration-150" onclick="switchTab('releases')">Binary</button>
       </div>
-      <div class="p-5 font-mono text-sm leading-7">
-        <div class="text-muted mb-1"># Install</div>
-        <div><span class="text-muted">$</span> <span class="text-text">go install github.com/rodrwan/shareiscare/cmd/shareiscare@latest</span></div>
-        <div class="mt-4 text-muted mb-1"># Share current directory</div>
-        <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span></div>
-        <div class="mt-4 text-muted mb-1"># Share a specific folder with a custom hash</div>
-        <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--hash</span> <span class="text-text">myfiles</span> <span class="text-accent">--dir</span> <span class="text-text">./public</span></div>
+
+      <!-- Brew panel -->
+      <div id="panel-brew" class="install-panel bg-surface border border-border rounded-b-xl rounded-tr-xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+          </div>
+          <button class="copy-btn text-dim hover:text-accent transition-colors p-1" data-copy="brew install rodrwan/tap/shareiscare" title="Copy to clipboard">
+            <svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="p-5 font-mono text-sm leading-7">
+          <div class="text-muted mb-1"># Install via Homebrew (macOS &amp; Linux)</div>
+          <div><span class="text-muted">$</span> <span class="text-text">brew install rodrwan/tap/shareiscare</span></div>
+          <div class="mt-4 text-muted mb-1"># Share current directory</div>
+          <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span></div>
+          <div class="mt-4 text-muted mb-1"># Share a specific folder with a custom hash</div>
+          <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--hash</span> <span class="text-text">myfiles</span> <span class="text-accent">--dir</span> <span class="text-text">./public</span></div>
+        </div>
+      </div>
+
+      <!-- Go Install panel -->
+      <div id="panel-go" class="install-panel bg-surface border border-border rounded-b-xl rounded-tr-xl overflow-hidden hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+          </div>
+          <button class="copy-btn text-dim hover:text-accent transition-colors p-1" data-copy="go install github.com/rodrwan/shareiscare/cmd/shareiscare@latest" title="Copy to clipboard">
+            <svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="p-5 font-mono text-sm leading-7">
+          <div class="text-muted mb-1"># Requires Go 1.25+</div>
+          <div><span class="text-muted">$</span> <span class="text-text">go install github.com/rodrwan/shareiscare/cmd/shareiscare@latest</span></div>
+          <div class="mt-4 text-muted mb-1"># Share current directory</div>
+          <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span></div>
+          <div class="mt-4 text-muted mb-1"># Share a specific folder with a custom hash</div>
+          <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--hash</span> <span class="text-text">myfiles</span> <span class="text-accent">--dir</span> <span class="text-text">./public</span></div>
+        </div>
+      </div>
+
+      <!-- Binary releases panel -->
+      <div id="panel-releases" class="install-panel bg-surface border border-border rounded-b-xl rounded-tr-xl overflow-hidden hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+            <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+          </div>
+          <button class="copy-btn text-dim hover:text-accent transition-colors p-1" data-copy="https://github.com/rodrwan/shareiscare/releases/latest" title="Copy releases URL">
+            <svg class="w-4 h-4 copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <svg class="w-4 h-4 check-icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="p-5 font-mono text-sm leading-7">
+          <div class="text-muted mb-1"># Download from GitHub Releases</div>
+          <div><span class="text-muted">$</span> <span class="text-dim"># Visit: github.com/rodrwan/shareiscare/releases/latest</span></div>
+          <div><span class="text-muted">$</span> <span class="text-dim"># Download shareiscare_VERSION_OS_ARCH.tar.gz</span></div>
+          <div class="mt-4 text-muted mb-1"># Example: macOS Apple Silicon</div>
+          <div><span class="text-muted">$</span> <span class="text-text">tar xzf shareiscare_0.1.0_darwin_arm64.tar.gz</span></div>
+          <div><span class="text-muted">$</span> <span class="text-text">sudo mv shareiscare /usr/local/bin/</span></div>
+          <div class="mt-4 text-muted mb-1"># Verify</div>
+          <div><span class="text-muted">$</span> <span class="text-text">shareiscare</span> <span class="text-accent">--version</span></div>
+        </div>
       </div>
     </div>
 
@@ -454,8 +534,23 @@ tailwind.config = {
           <tbody class="font-mono text-[13px]">
             <tr class="border-b border-border/50">
               <td class="py-3 pr-6 text-accent">--hash</td>
-              <td class="py-3 pr-6 text-dim">auto (6-char hex)</td>
+              <td class="py-3 pr-6 text-dim">auto (16-char hex)</td>
               <td class="py-3 text-muted font-sans">Subdomain hash for your URL</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--new-hash</td>
+              <td class="py-3 pr-6 text-dim">false</td>
+              <td class="py-3 text-muted font-sans">Force a new hash and URL, ignoring persisted values</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--password</td>
+              <td class="py-3 pr-6 text-dim">&mdash;</td>
+              <td class="py-3 text-muted font-sans">Require password for public access (HTTP Basic Auth)</td>
+            </tr>
+            <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--max-bandwidth</td>
+              <td class="py-3 pr-6 text-dim">0 (unlimited)</td>
+              <td class="py-3 text-muted font-sans">Max daily bandwidth in MB</td>
             </tr>
             <tr class="border-b border-border/50">
               <td class="py-3 pr-6 text-accent">--dir</td>
@@ -468,6 +563,11 @@ tailwind.config = {
               <td class="py-3 text-muted font-sans">Admin panel port</td>
             </tr>
             <tr class="border-b border-border/50">
+              <td class="py-3 pr-6 text-accent">--config</td>
+              <td class="py-3 pr-6 text-dim">&lt;dir&gt;/.shareiscare.json</td>
+              <td class="py-3 text-muted font-sans">Path to config file</td>
+            </tr>
+            <tr class="border-b border-border/50">
               <td class="py-3 pr-6 text-accent">--no-admin</td>
               <td class="py-3 pr-6 text-dim">false</td>
               <td class="py-3 text-muted font-sans">Disable admin panel</td>
@@ -477,10 +577,15 @@ tailwind.config = {
               <td class="py-3 pr-6 text-dim">false</td>
               <td class="py-3 text-muted font-sans">Don't seed default sensitive patterns</td>
             </tr>
-            <tr>
+            <tr class="border-b border-border/50">
               <td class="py-3 pr-6 text-accent">--max-zip</td>
               <td class="py-3 pr-6 text-dim">100 MB</td>
               <td class="py-3 text-muted font-sans">Max total size for ZIP downloads</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-6 text-accent">--version</td>
+              <td class="py-3 pr-6 text-dim">&mdash;</td>
+              <td class="py-3 text-muted font-sans">Print version and exit</td>
             </tr>
           </tbody>
         </table>
@@ -555,13 +660,162 @@ tailwind.config = {
 </section>
 
 <!-- ════════════════════════════════════════════════ -->
+<!-- SELF-HOSTING                                      -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="self-hosting" class="py-24 lg:py-32 border-t border-border" data-reveal>
+  <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+    <div class="text-center mb-16">
+      <span class="inline-block font-mono text-[11px] tracking-[0.2em] uppercase text-muted mb-4">Self-Hosting</span>
+      <h2 class="font-serif text-3xl md:text-4xl font-bold tracking-tight">Run it on your own Cloudflare</h2>
+      <p class="text-sm text-muted mt-4 max-w-2xl mx-auto leading-relaxed">
+        shareiscare runs entirely on Cloudflare's free tier. You can deploy your own instance with your own domain in a few minutes.
+      </p>
+    </div>
+
+    <!-- Prerequisites -->
+    <div class="max-w-3xl mx-auto mb-10" data-reveal>
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface border border-border text-accent text-xs font-mono">0</span>
+        Prerequisites
+      </h3>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div class="bg-surface border border-border rounded-lg px-4 py-3 text-sm">
+          <span class="text-accent font-mono text-xs">Cloudflare account</span>
+          <span class="text-muted ml-2">(free plan works)</span>
+        </div>
+        <div class="bg-surface border border-border rounded-lg px-4 py-3 text-sm">
+          <span class="text-accent font-mono text-xs">Domain</span>
+          <span class="text-muted ml-2">added to Cloudflare DNS</span>
+        </div>
+        <div class="bg-surface border border-border rounded-lg px-4 py-3 text-sm">
+          <span class="text-accent font-mono text-xs">Node.js &ge; 20</span>
+          <span class="text-muted ml-2">for Wrangler CLI</span>
+        </div>
+        <div class="bg-surface border border-border rounded-lg px-4 py-3 text-sm">
+          <span class="text-accent font-mono text-xs">Go &ge; 1.25</span>
+          <span class="text-muted ml-2">to build the binary</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Fork & Clone -->
+    <div class="max-w-3xl mx-auto mb-10" data-reveal>
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface border border-border text-accent text-xs font-mono">1</span>
+        Fork &amp; clone the repo
+      </h3>
+      <div class="bg-surface border border-border rounded-xl overflow-hidden">
+        <div class="p-5 font-mono text-sm leading-7">
+          <div><span class="text-muted">$</span> <span class="text-text">git clone https://github.com/<span class="text-accent">YOUR_USER</span>/shareiscare.git</span></div>
+          <div><span class="text-muted">$</span> <span class="text-text">cd shareiscare</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Configure domain -->
+    <div class="max-w-3xl mx-auto mb-10" data-reveal>
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface border border-border text-accent text-xs font-mono">2</span>
+        Replace the domain in 3 files
+      </h3>
+      <p class="text-sm text-muted mb-4 leading-relaxed">
+        Replace every occurrence of <code class="text-dim font-mono text-xs bg-surface px-1.5 py-0.5 rounded border border-border">shareiscare.dev</code> with your own domain.
+        For example, if your domain is <code class="text-accent font-mono text-xs">files.example.com</code>:
+      </p>
+
+      <!-- File 1 -->
+      <div class="bg-surface border border-border rounded-xl overflow-hidden mb-3">
+        <div class="flex items-center px-4 py-2.5 border-b border-border">
+          <span class="font-mono text-[12px] text-accent">worker/wrangler.toml</span>
+        </div>
+        <div class="p-4 font-mono text-[13px] leading-6">
+          <div class="text-muted mb-2"># Change routes to your domain</div>
+          <div><span class="text-dim">pattern = </span><span class="text-text">"*.<span class="text-accent">files.example.com</span>/*"</span></div>
+          <div><span class="text-dim">zone_name = </span><span class="text-text">"<span class="text-accent">example.com</span>"</span></div>
+        </div>
+      </div>
+
+      <!-- File 2 -->
+      <div class="bg-surface border border-border rounded-xl overflow-hidden mb-3">
+        <div class="flex items-center px-4 py-2.5 border-b border-border">
+          <span class="font-mono text-[12px] text-accent">worker/src/worker.js</span>
+        </div>
+        <div class="p-4 font-mono text-[13px] leading-6">
+          <div class="text-muted mb-2"># Update the bare-domain check (line ~161)</div>
+          <div><span class="text-dim">if</span> <span class="text-text">(!hash || hash === "<span class="text-accent">files</span>")</span></div>
+        </div>
+      </div>
+
+      <!-- File 3 -->
+      <div class="bg-surface border border-border rounded-xl overflow-hidden">
+        <div class="flex items-center px-4 py-2.5 border-b border-border">
+          <span class="font-mono text-[12px] text-accent">cmd/shareiscare/main.go</span>
+        </div>
+        <div class="p-4 font-mono text-[13px] leading-6">
+          <div class="text-muted mb-2"># Two lines reference the domain</div>
+          <div class="mb-1"><span class="text-dim">// Tunnel URL (~line 538)</span></div>
+          <div class="mb-3"><span class="text-text">wss://%s.<span class="text-accent">files.example.com</span>/__tunnel_connect</span></div>
+          <div><span class="text-dim">// Log output (~line 113)</span></div>
+          <div><span class="text-text">https://%s.<span class="text-accent">files.example.com</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Deploy Worker -->
+    <div class="max-w-3xl mx-auto mb-10" data-reveal>
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface border border-border text-accent text-xs font-mono">3</span>
+        Deploy the Worker
+      </h3>
+      <div class="bg-surface border border-border rounded-xl overflow-hidden">
+        <div class="p-5 font-mono text-sm leading-7">
+          <div class="text-muted mb-1"># Login to Cloudflare (first time only)</div>
+          <div><span class="text-muted">$</span> <span class="text-text">npx wrangler login</span></div>
+          <div class="mt-4 text-muted mb-1"># Deploy</div>
+          <div><span class="text-muted">$</span> <span class="text-text">make deploy</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Build & Run -->
+    <div class="max-w-3xl mx-auto mb-10" data-reveal>
+      <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface border border-border text-accent text-xs font-mono">4</span>
+        Build &amp; run
+      </h3>
+      <div class="bg-surface border border-border rounded-xl overflow-hidden">
+        <div class="p-5 font-mono text-sm leading-7">
+          <div><span class="text-muted">$</span> <span class="text-text">make build</span></div>
+          <div><span class="text-muted">$</span> <span class="text-text">./bin/shareiscare</span> <span class="text-accent">--dir</span> <span class="text-text">./my-folder</span></div>
+          <div class="mt-4 text-muted"># Your files are now at https://&lt;hash&gt;.files.example.com</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="max-w-3xl mx-auto bg-surface border border-border rounded-xl p-5" data-reveal>
+      <div class="flex gap-3">
+        <span class="text-accent text-lg mt-0.5">&#x2139;</span>
+        <div class="text-sm text-muted leading-relaxed">
+          <strong class="text-text">Cloudflare free tier</strong> includes Workers, Durable Objects with SQLite, and WebSocket Hibernation&mdash;everything
+          shareiscare needs. You won't be charged unless you exceed
+          <a href="https://developers.cloudflare.com/workers/platform/pricing/" target="_blank" rel="noopener" class="text-accent hover:underline">free tier limits</a>
+          (100k requests/day, 1GB Durable Object storage).
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
 <!-- FOOTER                                           -->
 <!-- ════════════════════════════════════════════════ -->
 <footer class="border-t border-border py-8">
   <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
     <div class="flex items-center gap-3">
       <span class="font-serif text-base font-bold tracking-tight text-text">share<em class="italic text-accent">is</em>care</span>
-      <span class="text-[12px] text-dim">&copy; 2025</span>
+      <span class="text-[12px] text-dim">&copy; 2026</span>
     </div>
     <div class="flex items-center gap-6 text-sm text-muted">
       <a href="https://github.com/rodrwan/shareiscare" target="_blank" rel="noopener" class="hover:text-accent transition-colors duration-150">GitHub</a>
@@ -614,6 +868,24 @@ tailwind.config = {
       }
     });
   });
+
+  /* ── Install method tab switching ── */
+  window.switchTab = function(method) {
+    document.querySelectorAll('.install-tab').forEach(function(tab) {
+      tab.classList.remove('active');
+      tab.style.borderColor = 'transparent';
+      tab.style.background = 'transparent';
+    });
+    document.querySelectorAll('.install-panel').forEach(function(panel) {
+      panel.classList.add('hidden');
+    });
+    var activeTab = document.getElementById('tab-' + method);
+    var activePanel = document.getElementById('panel-' + method);
+    if (activeTab && activePanel) {
+      activeTab.classList.add('active');
+      activePanel.classList.remove('hidden');
+    }
+  };
 
   /* ── Copy-to-clipboard on code blocks ── */
   document.querySelectorAll('.copy-btn').forEach(function(btn) {
